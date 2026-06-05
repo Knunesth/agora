@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16, // Mais arredondado para combinar com o mockup
+    borderRadius: borderRadius.md, // 12px — spec oficial
   },
   disabled: {
     opacity: 0.4,

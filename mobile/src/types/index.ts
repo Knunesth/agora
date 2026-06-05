@@ -5,7 +5,7 @@
 /** Status de um alerta no sistema */
 export type AlertStatus = 'pending' | 'verified' | 'expired' | 'rejected';
 
-/** Categorias de risco para denúncias (RF-03) */
+/** Categorias de risco para alertas (RF-03) */
 export type RiskCategory =
   | 'furto'
   | 'iluminacao'

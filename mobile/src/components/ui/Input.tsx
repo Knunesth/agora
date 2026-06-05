@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, type TextInputProps, type ViewStyle, TouchableOpacity } from 'react-native';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { spacing, borderRadius } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 
 interface InputProps extends TextInputProps {
@@ -77,10 +77,10 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: '#1A1A1A',
     borderWidth: 1.5,
-    borderColor: colors.surfaceBorder,
-    borderRadius: 16,
+    borderColor: '#2A2A2A',
+    borderRadius: borderRadius.md,
     height: 56,
     paddingHorizontal: spacing.md,
   },

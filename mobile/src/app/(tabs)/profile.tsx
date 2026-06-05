@@ -1,177 +1,233 @@
 /**
- * Ágora — Tela de Perfil Simplificada (MVP Sprint 7)
- *
- * Exibe métricas diretas de utilidade sem expor Gamificação (Trust Score é invisível).
+ * Ágora — Tela de Perfil (Sprint 9)
+ * Avatar, stats, histórico de alertas e menu de configurações.
+ * Regra: a palavra "denúncia" não aparece em nenhuma superfície visível ao usuário.
  */
 
-import { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, Alert as RNAlert } from 'react-native';
+import React from 'react';
+import {
+  View, StyleSheet, ScrollView, TouchableOpacity, Alert as RNAlert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LogOut, Shield } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-
-import { Text, Card, Button } from '@/components/ui';
+import {
+  Bell, Lock, MapPin, Info, ShieldCheck, LogOut, ChevronRight,
+} from 'lucide-react-native';
+import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
-import { supabase } from '@/services/supabase';
+import { spacing, borderRadius } from '@/theme/spacing';
 import { useAuth } from '@/contexts/AuthContext';
-
-function StatCard({ label, value, color }: { label: string; value: string | number; color: string }) {
-  return (
-    <Card variant="elevated" style={statStyles.card}>
-      <Text variant="h2" color={color} align="center">
-        {value}
-      </Text>
-      <Text
-        variant="overline"
-        color={colors.textSecondary}
-        align="center"
-        style={{ marginTop: spacing.xs }}
-      >
-        {label}
-      </Text>
-    </Card>
-  );
-}
+import { useAlerts } from '@/hooks/useAlerts';
+import { useLocation } from '@/hooks/useLocation';
+import { supabase } from '@/services/supabase';
 
 export default function ProfileScreen() {
-  const { user, signOut } = useAuth();
   const router = useRouter();
-  
-  const [totalReported, setTotalReported] = useState<number>(0);
-  const [totalVerified, setTotalVerified] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { location } = useLocation();
+  const { alerts } = useAlerts(location);
 
-  useEffect(() => {
-    async function loadStats() {
-      if (!user) return;
-      try {
-        // 1. Busca total de alertas criados pelo usuário
-        const { count: reportedCount } = await supabase
-          .from('alerts')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
+  const fullName = user?.user_metadata?.display_name ?? 'Cidadão';
+  const initials = fullName
+    .split(' ')
+    .slice(0, 2)
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase();
 
-        // 2. Busca total de alertas do usuário que foram confirmados
-        const { count: verifiedCount } = await supabase
-          .from('alerts')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('status', 'verified');
+  // Contagem de alertas do usuário logado
+  const myAlerts = alerts.filter(a => a.userId === user?.id);
+  const confirmedAlerts = myAlerts.filter(a => a.status === 'verified');
 
-        setTotalReported(reportedCount || 0);
-        setTotalVerified(verifiedCount || 0);
-      } catch (err) {
-        console.error('Erro ao carregar estatísticas:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadStats();
-  }, [user]);
-
-  const handleLogout = async () => {
-    RNAlert.alert('Sair', 'Tem certeza que deseja sair da conta?', [
+  const handleSignOut = async () => {
+    RNAlert.alert('Sair', 'Tem certeza que deseja sair?', [
       { text: 'Cancelar', style: 'cancel' },
-      { 
-        text: 'Sair', 
-        style: 'destructive',
-        onPress: async () => {
-          await signOut();
-          router.replace('/(auth)/login');
-        }
-      }
+      {
+        text: 'Sair', style: 'destructive',
+        onPress: async () => { await supabase.auth.signOut(); },
+      },
     ]);
+  };
+
+  const menuItems = [
+    { id: 'notifications', icon: Bell, label: 'Notificações', onPress: () => {} },
+    { id: 'privacy', icon: Lock, label: 'Privacidade', onPress: () => {} },
+    { id: 'location', icon: MapPin, label: 'Localização', onPress: () => {} },
+    { id: 'about', icon: Info, label: 'Sobre o Ágora', onPress: () => {} },
+    { id: 'auth', icon: ShieldCheck, label: 'Autenticação', onPress: () => {} },
+  ];
+
+  const statusMap: Record<string, { label: string; color: string; bg: string }> = {
+    verified:   { label: 'CONFIRMADA', color: colors.primary,  bg: colors.primaryMuted },
+    pending:    { label: 'ANALISANDO', color: colors.warning,  bg: colors.warningMuted },
+    expired:    { label: 'EXPIRADA',   color: colors.textMuted, bg: colors.surfaceBorder },
+    rejected:   { label: 'REJEITADA',  color: colors.danger,   bg: colors.dangerMuted },
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Avatar e Identidade */}
-        <View style={styles.profileHeader}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
+        {/* Avatar + Badge */}
+        <View style={styles.avatarSection}>
           <View style={styles.avatar}>
-            <Shield color={colors.background} size={40} />
+            <Text style={styles.initials}>{initials}</Text>
           </View>
-          <Text variant="h2" style={{ marginTop: spacing.md }}>
-            Cidadão
-          </Text>
-          <Text variant="bodySmall" color={colors.textSecondary}>
-            {user?.email}
-          </Text>
+          <View style={styles.activeBadge}>
+            <Text style={styles.activeBadgeText}>● CIDADÃO ATIVO</Text>
+          </View>
+          <Text variant="h3" style={styles.name}>{fullName}</Text>
+          <Text variant="caption" color={colors.textMuted}>{user?.email}</Text>
         </View>
 
-        {/* Estatísticas MVP */}
-        <View style={styles.section}>
-          <Text variant="h3">Seu Impacto na Rede</Text>
-          
-          {isLoading ? (
-            <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
-          ) : (
-            <View style={styles.statsGrid}>
-              <StatCard label="ALERTAS EMITIDOS" value={totalReported} color={colors.primary} />
-              <StatCard label="VERIFICADOS (ÚTEIS)" value={totalVerified} color={colors.trustHigh || colors.success} />
+        {/* Stats */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{myAlerts.length}</Text>
+            <Text variant="caption" color={colors.textSecondary}>Alertas feitos</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statCard}>
+            <Text style={[styles.statNumber, { color: colors.primary }]}>
+              {confirmedAlerts.length}
+            </Text>
+            <Text variant="caption" color={colors.textSecondary}>Confirmados</Text>
+          </View>
+        </View>
+
+        {/* Histórico de Alertas */}
+        <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>
+          HISTÓRICO DE ALERTAS
+        </Text>
+
+        {myAlerts.length === 0 && (
+          <View style={styles.emptyHistory}>
+            <Text variant="caption" color={colors.textMuted}>
+              Você ainda não criou nenhum alerta.
+            </Text>
+          </View>
+        )}
+
+        {myAlerts.slice(0, 6).map((alert) => {
+          const s = statusMap[alert.status] ?? statusMap.expired;
+          const date = new Date(alert.createdAt).toLocaleDateString('pt-BR');
+
+          return (
+            <View key={alert.id} style={styles.historyRow}>
+              <View style={styles.historyContent}>
+                <Text variant="bodySmall" style={{ color: colors.textPrimary, fontWeight: '600' }}>
+                  {alert.category.charAt(0).toUpperCase() + alert.category.slice(1)}
+                </Text>
+                <Text variant="caption" color={colors.textMuted}>
+                  Sua área · {date}
+                </Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: s.bg }]}>
+                <Text style={[styles.statusText, { color: s.color }]}>{s.label}</Text>
+              </View>
             </View>
-          )}
-          
-          <Text variant="bodySmall" color={colors.textMuted} align="center" style={{ marginTop: spacing.md }}>
-            O seu Trust Score e seu peso na comunidade são calculados silenciosamente em segundo plano para garantir a segurança da rede de Guardiões.
-          </Text>
+          );
+        })}
+
+        {/* Menu Configurações */}
+        <Text variant="overline" color={colors.textMuted} style={[styles.sectionLabel, { marginTop: spacing.lg }]}>
+          CONFIGURAÇÕES
+        </Text>
+
+        <View style={styles.menuCard}>
+          {menuItems.map((item, index) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.menuRow,
+                index < menuItems.length - 1 && styles.menuRowBorder,
+              ]}
+              onPress={item.onPress}
+              accessibilityLabel={item.label}
+            >
+              <item.icon color={colors.textSecondary} size={20} />
+              <Text variant="body" style={styles.menuLabel}>{item.label}</Text>
+              <ChevronRight color={colors.textMuted} size={18} />
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {/* Zona de Perigo / Ações */}
-        <View style={[styles.section, { marginTop: spacing.xxl }]}>
-          <Button 
-            title="Sair da Conta" 
-            variant="ghost" 
-            onPress={handleLogout}
-            icon={<LogOut size={20} color={colors.primary} />}
-          />
-        </View>
+        {/* Sair */}
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <LogOut color={colors.danger} size={18} />
+          <Text style={styles.signOutText}>Sair</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: spacing.xxl }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-  },
-  profileHeader: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginTop: spacing.md,
-  },
-  section: {
-    marginTop: spacing.xl,
-    gap: spacing.sm,
-  },
-});
+  container: { flex: 1, backgroundColor: '#0D0D0D' },
+  scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
 
-const statStyles = StyleSheet.create({
-  card: {
-    flex: 1,
-    minWidth: '45%',
-    paddingVertical: spacing.lg,
+  avatarSection: { alignItems: 'center', marginBottom: spacing.xl },
+  avatar: {
+    width: 80, height: 80, borderRadius: borderRadius.full,
+    backgroundColor: colors.primaryMuted, borderWidth: 2, borderColor: colors.primary,
+    justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm,
   },
+  initials: { color: colors.primary, fontSize: 28, fontWeight: '700' },
+  activeBadge: {
+    backgroundColor: colors.primaryMuted, borderRadius: borderRadius.xs,
+    paddingHorizontal: spacing.sm, paddingVertical: 3, marginBottom: spacing.sm,
+  },
+  activeBadgeText: { color: colors.primary, fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+  name: { fontSize: 22, color: colors.textPrimary, marginBottom: 2 },
+
+  statsRow: {
+    flexDirection: 'row', backgroundColor: colors.surfaceElevated,
+    borderRadius: borderRadius.lg, marginBottom: spacing.xl,
+    borderWidth: 1, borderColor: colors.surfaceBorder,
+  },
+  statCard: {
+    flex: 1, alignItems: 'center', paddingVertical: spacing.lg,
+  },
+  statDivider: { width: 1, backgroundColor: colors.surfaceBorder, marginVertical: spacing.md },
+  statNumber: { fontSize: 28, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
+
+  sectionLabel: { marginBottom: spacing.sm },
+  emptyHistory: {
+    padding: spacing.lg, backgroundColor: colors.surfaceElevated,
+    borderRadius: borderRadius.md, alignItems: 'center',
+  },
+  historyRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: colors.surfaceElevated, borderRadius: borderRadius.md,
+    padding: spacing.md, marginBottom: spacing.sm,
+    borderWidth: 1, borderColor: colors.surfaceBorder,
+  },
+  historyContent: { flex: 1, marginRight: spacing.sm },
+  statusBadge: {
+    paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: borderRadius.xs,
+  },
+  statusText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
+
+  menuCard: {
+    backgroundColor: colors.surfaceElevated, borderRadius: borderRadius.lg,
+    borderWidth: 1, borderColor: colors.surfaceBorder, marginBottom: spacing.lg,
+    overflow: 'hidden',
+  },
+  menuRow: {
+    flexDirection: 'row', alignItems: 'center', padding: spacing.lg, gap: spacing.md,
+  },
+  menuRowBorder: {
+    borderBottomWidth: 1, borderBottomColor: colors.surfaceBorder,
+  },
+  menuLabel: { flex: 1, color: colors.textPrimary },
+
+  signOutButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: spacing.sm, padding: spacing.lg,
+    backgroundColor: colors.dangerMuted, borderRadius: borderRadius.md,
+    borderWidth: 1, borderColor: colors.danger + '40',
+  },
+  signOutText: { color: colors.danger, fontSize: 16, fontWeight: '600' },
 });

@@ -1,263 +1,255 @@
 /**
- * Ágora — Tela de Login Renovada (Sprint 8)
+ * Ágora — Tela de Login (Sprint 9 — Corrigida)
+ * Usa apenas RNText nativo para evitar o crash "Text strings must be rendered within a Text component".
  */
 
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Image } from 'react-native';
+import {
+  View, StyleSheet, TouchableOpacity, KeyboardAvoidingView,
+  Platform, Alert, Image, Text as RNText, ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ShieldCheck, Mail, Lock, Eye, EyeOff, CheckSquare } from 'lucide-react-native';
-import { Text, Button, Input } from '@/components/ui';
+import { ChevronLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
+import { Button, Input } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
+import { typography } from '@/theme/typography';
 import { supabase } from '@/services/supabase';
+
+// Credenciais de teste — visíveis somente em modo DEV
+const TEST_EMAIL    = 'teste@agora.app';
+const TEST_PASSWORD = 'Agora@2025';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email,        setEmail]        = useState('');
+  const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading,    setIsLoading]    = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Atenção', 'Preencha email e senha.');
       return;
     }
-
     setIsLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
     setIsLoading(false);
-
     if (error) {
       Alert.alert('Erro no Login', error.message);
     }
-    // RouteGuard toma conta do sucesso.
+    // RouteGuard cuida do redirecionamento pós-login.
+  };
+
+  const handleTestLogin = () => {
+    setEmail(TEST_EMAIL);
+    setPassword(TEST_PASSWORD);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        style={styles.keyboardView}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Header (Back + Logo) */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <ChevronLeft color={colors.textPrimary} size={24} />
-          </TouchableOpacity>
-          <View style={styles.logoCenter}>
-            <Image
-              source={require('@/assets/images/logo-transparent.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* ── Header ─────────────────────────────────────────────── */}
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <ChevronLeft color={colors.textPrimary} size={24} />
+            </TouchableOpacity>
+
+            <View style={styles.logoCenter}>
+              <Image
+                source={require('@/assets/images/logo-transparent.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
+              <RNText style={styles.brandName}>Ágora</RNText>
+            </View>
+
+            <View style={{ width: 40 }} />
+          </View>
+
+          {/* ── Títulos ────────────────────────────────────────────── */}
+          <View style={styles.titleSection}>
+            <RNText style={styles.welcomeTitle}>Bem-vindo(a) de volta</RNText>
+            <RNText style={styles.welcomeSubtitle}>Entre na sua conta para continuar.</RNText>
+          </View>
+
+          {/* ── Formulário ─────────────────────────────────────────── */}
+          <View style={styles.form}>
+            <Input
+              placeholder="seu@email.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              iconLeft={<Mail color={colors.textMuted} size={20} />}
             />
-            <Text variant="h2" style={styles.brandName}>Ágora</Text>
-          </View>
-          <View style={{ width: 40 }} /> {/* Spacer */}
-        </View>
 
-        {/* Titles */}
-        <View style={styles.titleSection}>
-          <Text variant="h2" style={styles.welcomeTitle}>Bem-vinda de volta</Text>
-          <Text variant="body" color={colors.textSecondary}>
-            Entre na sua conta para continuar.
-          </Text>
-        </View>
+            <Input
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              iconLeft={<Lock color={colors.textMuted} size={20} />}
+              iconRight={
+                showPassword
+                  ? <EyeOff color={colors.textMuted} size={20} />
+                  : <Eye  color={colors.textMuted} size={20} />
+              }
+              onIconRightPress={() => setShowPassword(!showPassword)}
+            />
 
-        {/* Form */}
-        <View style={styles.form}>
-          <Input
-            placeholder="gaby@exemplo.com"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            iconLeft={<Mail color={colors.textMuted} size={20} />}
-          />
-
-          <Input
-            placeholder="••••••••"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            iconLeft={<Lock color={colors.textMuted} size={20} />}
-            iconRight={showPassword ? <EyeOff color={colors.textMuted} size={20} /> : <Eye color={colors.textMuted} size={20} />}
-            onIconRightPress={() => setShowPassword(!showPassword)}
-          />
-
-          {/* Options row */}
-          <View style={styles.optionsRow}>
-            <TouchableOpacity 
-              style={styles.rememberButton}
-              onPress={() => setRememberMe(!rememberMe)}
+            {/* Esqueci a senha */}
+            <TouchableOpacity
+              style={styles.forgotRow}
+              onPress={() => router.push('/(auth)/forgot-password')}
             >
-              {rememberMe ? (
-                <CheckSquare color={colors.primary} size={20} />
-              ) : (
-                <View style={styles.checkboxEmpty} />
-              )}
-              <Text variant="bodySmall" color={colors.textSecondary} style={{ marginLeft: 8 }}>
-                Lembrar-me
-              </Text>
+              <RNText style={styles.forgotText}>Esqueci a senha</RNText>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')}>
-              <Text variant="bodySmall" color={colors.primary} style={{ fontWeight: '600' }}>
-                Esqueci a senha
-              </Text>
+            {/* Botão principal */}
+            <Button
+              title={isLoading ? 'Acessando...' : 'ENTRAR'}
+              variant="primary"
+              onPress={handleLogin}
+              disabled={isLoading}
+              style={{ height: 56 }}
+            />
+
+            {/* Botão DEV */}
+            {__DEV__ && (
+              <TouchableOpacity style={styles.devButton} onPress={handleTestLogin}>
+                <RNText style={styles.devButtonText}>
+                  {'🧪 Preencher login de teste'}
+                </RNText>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* ── Divisor ────────────────────────────────────────────── */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <RNText style={styles.dividerText}>{'OU CONTINUE COM'}</RNText>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* ── Botões Sociais ──────────────────────────────────────── */}
+          <View style={styles.socialRow}>
+            <TouchableOpacity style={styles.socialButton}>
+              <RNText style={styles.socialText}>{'G  Google'}</RNText>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialButton}>
+              <RNText style={styles.socialText}>{'  Apple'}</RNText>
             </TouchableOpacity>
           </View>
 
-          <Button 
-            title={isLoading ? 'Acessando...' : 'ENTRAR'} 
-            variant="primary" 
-            onPress={handleLogin} 
-            disabled={isLoading}
-            style={styles.loginButton}
-          />
-        </View>
-
-        {/* Social Dividers */}
-        <View style={styles.dividerContainer}>
-          <View style={styles.dividerLine} />
-          <Text variant="caption" color={colors.textMuted} style={styles.dividerText}>
-            OU CONTINUE COM
-          </Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        <View style={styles.socialContainer}>
-          <TouchableOpacity style={styles.socialButton}>
-            <Text style={styles.socialText} color={colors.textPrimary}>G Google</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-            <Text style={styles.socialText} color={colors.textPrimary}> Apple</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={{ flex: 1 }} />
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text variant="bodySmall" color={colors.textSecondary}>Novo no Ágora? </Text>
-          <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-            <Text variant="bodySmall" color={colors.primary} style={{ fontWeight: '600' }}>
-              Criar conta
-            </Text>
-          </TouchableOpacity>
-        </View>
+          {/* ── Rodapé ─────────────────────────────────────────────── */}
+          <View style={styles.footer}>
+            <RNText style={styles.footerText}>{'Novo no Ágora? '}</RNText>
+            <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+              <RNText style={styles.footerLink}>Criar conta</RNText>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  keyboardView: {
-    flex: 1,
-    paddingHorizontal: spacing.xl,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  scroll:    { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl },
+
+  // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.lg,
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', paddingVertical: spacing.lg,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center',
   },
-  logoCenter: {
-    alignItems: 'center',
-  },
-  logoImage: {
-    width: 56,
-    height: 56,
-    marginBottom: 4,
-  },
+  logoCenter: { alignItems: 'center' },
+  logoImage:  { width: 48, height: 48, marginBottom: 2 },
   brandName: {
-    fontSize: 20,
-    letterSpacing: -0.5,
+    fontSize: 18, fontWeight: '700', color: colors.textPrimary,
+    fontFamily: typography.fontFamily.bold, letterSpacing: -0.5,
   },
-  titleSection: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.xl,
-  },
+
+  // Titles
+  titleSection: { marginTop: spacing.xl, marginBottom: spacing.xl },
   welcomeTitle: {
-    fontSize: 28,
-    marginBottom: spacing.xs,
+    fontSize: 28, fontWeight: '700', color: colors.textPrimary,
+    fontFamily: typography.fontFamily.bold, marginBottom: spacing.xs,
   },
-  form: {
-    gap: spacing.md,
+  welcomeSubtitle: {
+    fontSize: 15, color: colors.textSecondary,
+    fontFamily: typography.fontFamily.regular,
   },
-  optionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.sm,
+
+  // Form
+  form: { gap: spacing.md },
+  forgotRow: { alignSelf: 'flex-end' },
+  forgotText: {
+    fontSize: 14, color: colors.primary, fontWeight: '600',
+    fontFamily: typography.fontFamily.medium,
   },
-  rememberButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+
+  // DEV button
+  devButton: {
+    marginTop: spacing.xs, padding: spacing.sm,
+    borderRadius: 8, borderWidth: 1, borderColor: '#444',
+    borderStyle: 'dashed', alignItems: 'center',
   },
-  checkboxEmpty: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: colors.textMuted,
+  devButtonText: {
+    color: '#888', fontSize: 12, fontFamily: typography.fontFamily.regular,
   },
-  loginButton: {
-    height: 56,
+
+  // Divider
+  dividerRow: {
+    flexDirection: 'row', alignItems: 'center',
+    marginVertical: spacing.xl,
   },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: spacing.xxl,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.surfaceBorder,
-  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.surfaceBorder },
   dividerText: {
-    marginHorizontal: spacing.md,
-    letterSpacing: 1,
+    marginHorizontal: spacing.md, fontSize: 11, color: colors.textMuted,
+    fontFamily: typography.fontFamily.regular, letterSpacing: 1,
   },
-  socialContainer: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
+
+  // Social
+  socialRow: { flexDirection: 'row', gap: spacing.md },
   socialButton: {
-    flex: 1,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    justifyContent: 'center',
-    alignItems: 'center',
+    flex: 1, height: 52, borderRadius: 16,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.surfaceBorder,
+    justifyContent: 'center', alignItems: 'center',
   },
   socialText: {
-    fontWeight: '500',
-    fontSize: 16,
+    fontSize: 15, fontWeight: '500', color: colors.textPrimary,
+    fontFamily: typography.fontFamily.medium,
   },
+
+  // Footer
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingVertical: spacing.xl,
+    flexDirection: 'row', justifyContent: 'center',
+    paddingTop: spacing.xl,
+  },
+  footerText: {
+    fontSize: 14, color: colors.textSecondary,
+    fontFamily: typography.fontFamily.regular,
+  },
+  footerLink: {
+    fontSize: 14, color: colors.primary, fontWeight: '600',
+    fontFamily: typography.fontFamily.medium,
   },
 });

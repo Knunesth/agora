@@ -1,70 +1,65 @@
 /**
- * Ágora — Tela de Boas-Vindas
- * Nova tela inicial do fluxo de Autenticação.
+ * Ágora — Tela de Boas-Vindas (Sprint 9 — Corrigida)
+ * Usa apenas RNText nativo para evitar crash no Fabric renderer.
+ * SafeAreaView vem de react-native-safe-area-context (não de react-native).
  */
 
 import React from 'react';
-import { View, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, Text as RNText } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ShieldCheck } from 'lucide-react-native'; // Mantido para outras telas se necessário
-import { Text, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
+import { typography } from '@/theme/typography';
 
 export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.content}>
-        
-        {/* Logo Centralizada */}
+
+        {/* Logo + Brand */}
         <View style={styles.logoContainer}>
           <Image
             source={require('@/assets/images/logo-transparent.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />
-          <Text variant="h1" style={styles.brandName}>Ágora</Text>
-          <Text variant="bodySmall" color={colors.textSecondary} style={styles.slogan}>
-            Sua segurança em primeiro lugar
-          </Text>
+          <RNText style={styles.brandName}>Ágora</RNText>
+          <RNText style={styles.slogan}>Sua segurança em primeiro lugar.</RNText>
         </View>
 
-        {/* Textos da Comunidade */}
+        {/* Descrição */}
         <View style={styles.textContainer}>
-          <Text variant="body" color={colors.textSecondary} style={styles.centerText}>
-            Cidadãos protegendo cidadãos.
-          </Text>
-          <Text variant="body" color={colors.textSecondary} style={styles.centerText}>
-            Receba alertas em tempo real e ajude
-          </Text>
-          <Text variant="body" color={colors.textSecondary} style={styles.centerText}>
-            a tornar sua região mais segura.
-          </Text>
+          <RNText style={styles.descText}>
+            {'Cidadãos protegendo cidadãos.\nReceba alertas em tempo real e ajude\na tornar sua região mais segura.'}
+          </RNText>
         </View>
 
-        {/* Botões de Ação */}
+        {/* Botões */}
         <View style={styles.actionContainer}>
-          <Button 
-            title="ENTRAR  →" 
-            variant="primary" 
+          <Button
+            title="ENTRAR  →"
+            variant="primary"
             size="lg"
-            onPress={() => router.push('/(auth)/login')} 
+            onPress={() => router.push('/(auth)/login')}
             style={styles.button}
           />
-          <Button 
-            title="Criar conta" 
-            variant="secondary" // Usando secondary que vira outlined ou ghost dependendo do visual
+          <Button
+            title="Criar conta"
+            variant="secondary"
             size="lg"
-            onPress={() => router.push('/(auth)/register')} 
-            style={styles.buttonGhost}
+            onPress={() => router.push('/(auth)/register')}
+            style={styles.button}
           />
         </View>
-        
-        <Text variant="caption" color={colors.textMuted} style={styles.terms}>
-          Ao continuar, você aceita nossos Termos e Política de Privacidade.
-        </Text>
+
+        {/* Termos */}
+        <RNText style={styles.terms}>
+          {'Ao continuar, você aceita nossos Termos e Política de Privacidade.'}
+        </RNText>
 
       </View>
     </SafeAreaView>
@@ -72,57 +67,39 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   content: {
     flex: 1,
-    padding: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
     justifyContent: 'space-between',
-    paddingVertical: spacing.xxxl,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginTop: spacing.xxl,
-  },
-  logoImage: {
-    width: 88,
-    height: 88,
-    marginBottom: spacing.md,
-  },
+
+  logoContainer: { alignItems: 'center', marginTop: spacing.xl },
+  logoImage: { width: 88, height: 88, marginBottom: spacing.md },
   brandName: {
-    fontSize: 40,
-    letterSpacing: -1,
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
+    fontSize: 40, fontWeight: '700', color: colors.textPrimary,
+    fontFamily: typography.fontFamily.bold,
+    letterSpacing: -1, marginBottom: spacing.xs,
   },
   slogan: {
-    fontSize: 14,
+    fontSize: 14, color: colors.textSecondary,
+    fontFamily: typography.fontFamily.regular, textAlign: 'center',
   },
-  textContainer: {
-    alignItems: 'center',
-    gap: spacing.xs,
+
+  textContainer: { alignItems: 'center' },
+  descText: {
+    fontSize: 15, color: colors.textSecondary,
+    fontFamily: typography.fontFamily.regular,
+    textAlign: 'center', lineHeight: 24,
   },
-  centerText: {
-    textAlign: 'center',
-    fontSize: 15,
-  },
-  actionContainer: {
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  button: {
-    width: '100%',
-  },
-  buttonGhost: {
-    width: '100%',
-    backgroundColor: colors.surface,
-    borderColor: colors.surfaceBorder,
-    borderWidth: 1,
-  },
+
+  actionContainer: { gap: spacing.md },
+  button: { width: '100%' },
+
   terms: {
-    textAlign: 'center',
-    fontSize: 11,
+    fontSize: 11, color: colors.textMuted,
+    fontFamily: typography.fontFamily.regular,
+    textAlign: 'center', lineHeight: 16,
   },
 });
