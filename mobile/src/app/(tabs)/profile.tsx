@@ -158,7 +158,8 @@ export default function ProfileScreen() {
           <Text style={styles.signOutText}>Sair</Text>
         </TouchableOpacity>
 
-        <View style={{ height: spacing.xxl }} />
+        {/* Espaçamento extra no final para a CustomTabBar não cobrir o último item */}
+        <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>
   );

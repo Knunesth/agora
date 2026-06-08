@@ -1,23 +1,17 @@
-/**
- * Ágora — Custom Tab Bar com botão SOS central (Sprint 9)
- * Layout: [Início | Mapa] [SOS] [Alertas | Perfil]
- * O botão SOS nunca é afetado por outros tokens de design.
- */
-
-import React from 'react';
-import {
-  View, TouchableOpacity, StyleSheet, Text as RNText,
-  Alert as RNAlert, Platform,
-} from 'react-native';
+import React, { useEffect } from 'react';
+import { View, TouchableOpacity, StyleSheet, Text as RNText, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withTiming, 
+  Easing, 
+  withSequence 
+} from 'react-native-reanimated';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, Map, Bell, User } from 'lucide-react-native';
-import { colors } from '@/theme/colors';
-import { typography } from '@/theme/typography';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/services/supabase';
-import * as ExpoLocation from 'expo-location';
 
 const TAB_CONFIG: Record<string, { icon: React.FC<any>; label: string }> = {
   index:   { icon: Home, label: 'Início' },
@@ -28,219 +22,282 @@ const TAB_CONFIG: Record<string, { icon: React.FC<any>; label: string }> = {
 
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  
+  // Animação de pulso do Glow externo (escala de 1.0 a 1.08 em 2s loop)
+  const glowScale = useSharedValue(1);
 
-  const doSOS = async () => {
-    try {
-      const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        RNAlert.alert('GPS necessário', 'Precisamos da sua localização para emitir o SOS.');
-        return;
-      }
-      const loc = await ExpoLocation.getCurrentPositionAsync({ accuracy: ExpoLocation.Accuracy.High });
-      const location = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-
-      const { data, error } = await supabase.functions.invoke('sos-alert', {
-        body: { location, user_id: user?.id },
-      });
-      if (error) throw error;
-
-      RNAlert.alert(
-        '🚨 REDE DE CONFIANÇA ACIONADA',
-        `Contatos pessoais notificados: ${data?.contacts_notified ?? 0}\nGuardiões próximos: ${data?.guardians_notified ?? 0}`,
-        [{ text: 'ENTENDIDO' }]
-      );
-    } catch (err: any) {
-      RNAlert.alert('Erro Crítico', 'Falha ao emitir SOS. Ligue 190 imediatamente.\n' + err.message);
-    }
-  };
-
-  const handleSOS = () => {
-    RNAlert.alert(
-      '🚨 Ativar SOS de Emergência?',
-      'Sua localização será enviada à sua rede de confiança e aos Guardiões próximos.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'ATIVAR SOS', style: 'destructive', onPress: doSOS },
-      ]
+  useEffect(() => {
+    glowScale.value = withRepeat(
+      withSequence(
+        withTiming(1.08, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1, // Loop infinito
+      false
     );
-  };
+  }, []);
+
+  const animatedGlow = useAnimatedStyle(() => ({
+    transform: [{ scale: glowScale.value }],
+  }));
 
   const visibleRoutes = state.routes.filter(r => TAB_CONFIG[r.name]);
   const leftRoutes  = visibleRoutes.slice(0, 2);
   const rightRoutes = visibleRoutes.slice(2);
 
   const renderTab = (route: typeof state.routes[0]) => {
-    const routeIndex = state.routes.findIndex(r => r.key === route.key);
-    const isFocused = state.index === routeIndex || (state.routes[state.index]?.name === 'partners' && route.name === 'index');
+    const isFocused = state.routes[state.index]?.key === route.key || 
+                      (state.routes[state.index]?.name === 'partners' && route.name === 'index');
     const cfg = TAB_CONFIG[route.name];
     if (!cfg) return null;
+    
     const IconComp = cfg.icon;
-    const iconColor = isFocused ? '#00E676' : '#6B7280'; // Verde brilhante ativo, Cinza azulado inativo
+    const color = isFocused ? '#00C853' : '#6B6B6B';
 
     return (
       <TouchableOpacity
         key={route.key}
         style={styles.tabItem}
         onPress={() => navigation.navigate(route.name)}
-        accessibilityLabel={cfg.label}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: isFocused }}
+        activeOpacity={0.7}
       >
-        <IconComp color={iconColor} size={22} strokeWidth={isFocused ? 2.5 : 1.8} />
-        <RNText style={[styles.tabLabel, { color: iconColor }]}>{cfg.label}</RNText>
+        <View style={styles.iconWrapper}>
+          {isFocused && <View style={styles.activeIconGlow} />}
+          <IconComp color={color} size={24} strokeWidth={isFocused ? 2.5 : 2} />
+        </View>
+        <RNText style={[styles.tabLabel, { color }]}>{cfg.label}</RNText>
+        {/* Linha sublinhada verde fina da tab ativa */}
+        <View style={[styles.activeUnderline, { opacity: isFocused ? 1 : 0 }]} />
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom || 10 }]}>
-      {/* Left tabs */}
-      <View style={styles.side}>
-        {leftRoutes.map((r) => renderTab(r))}
+    <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      
+      {/* Pílula flutuante */}
+      <View style={styles.pillContainer}>
+        
+        {/* Lado esquerdo */}
+        <View style={styles.side}>
+          {leftRoutes.map(renderTab)}
+        </View>
+
+        {/* Espaçamento central para o SOS */}
+        <View style={styles.centerSpace} />
+
+        {/* Lado direito */}
+        <View style={styles.side}>
+          {rightRoutes.map(renderTab)}
+        </View>
+
       </View>
 
-      {/* SOS Center Button — sobrepondo a borda superior */}
-      <View style={styles.sosWrapper}>
-        <View style={styles.glowEffect} />
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={handleSOS}
-          style={styles.sosTouchable}
-          accessibilityLabel="Botão SOS Emergência"
-          accessibilityRole="button"
-        >
+      {/* Botão SOS — Posicionamento Absoluto saindo da tab bar */}
+      <View style={styles.sosContainer} pointerEvents="box-none">
+        
+        {/* Efeito Glow Difuso Pulsante */}
+        <Animated.View style={[styles.glowWrapper, animatedGlow]} pointerEvents="none">
+          <View style={styles.glowOuter} />
+          <View style={styles.glowInner} />
+        </Animated.View>
+
+        {/* Botão Físico SOS */}
+        <TouchableOpacity activeOpacity={0.85} style={styles.sosButtonOuter}>
           <LinearGradient
-            colors={['#FF7B9C', '#FF3B5C', '#D31F41']}
-            locations={[0, 0.5, 1]}
-            style={styles.sosButton}
+            colors={['#FF5555', '#990000']}
+            start={{ x: 0.2, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={styles.sosButtonInner}
           >
-            {/* Efeito de brilho mais sutil */}
-            <View style={styles.sosTopHighlight} />
+            {/* Efeito 3D Highlight no topo */}
+            <View style={styles.sosHighlight} />
             
-            <View style={styles.sosTextContainer}>
-              <RNText style={styles.sosText}>SOS</RNText>
+            <View style={styles.sosTextWrapper}>
+              <RNText style={styles.sosTextMain}>SOS</RNText>
+              <RNText style={styles.sosTextSub}>EMERGÊNCIA</RNText>
             </View>
-            <RNText style={styles.sosSubText}>EMERGÊNCIA</RNText>
           </LinearGradient>
         </TouchableOpacity>
-      </View>
 
-      {/* Right tabs */}
-      <View style={styles.side}>
-        {rightRoutes.map((r) => renderTab(r))}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 8,
+    backgroundColor: 'transparent',
+  },
+  pillContainer: {
+    height: 76,
+    backgroundColor: '#111111',
+    borderRadius: 38, // Border radius generoso (pílula)
+    borderWidth: 1,
+    borderColor: '#242424',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#000000', 
-    height: 70,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    // Sombra suave para destacar a tab bar
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 24,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.6,
+    shadowRadius: 15,
+    elevation: 20,
   },
   side: {
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 10,
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    height: '100%',
+  },
+  centerSpace: {
+    width: 100, // Espaço ajustado
   },
   tabItem: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
-    gap: 4,
+    flex: 1, // Distribui igualmente no espaço disponível
+  },
+  iconWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  activeIconGlow: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 200, 83, 0.15)', // Sutil reflexo verde no fundo do ícone
   },
   tabLabel: {
     fontSize: 11,
-    fontFamily: typography.fontFamily.semiBold,
-    letterSpacing: 0.3,
+    fontWeight: '500',
+  },
+  activeUnderline: {
+    marginTop: 6,
+    height: 2,
+    width: 24,
+    backgroundColor: '#00C853',
+    borderRadius: 1,
   },
 
-  // SOS — Fixando a posição exata
-  sosWrapper: {
-    width: 72,
-    height: 72,
+  /* -------------------------------
+     BOTÃO SOS - DETALHES CIRÚRGICOS
+     ------------------------------- */
+  sosContainer: {
     position: 'absolute',
+    bottom: 30, // Traduz para cima da tab bar
     left: '50%',
-    marginLeft: -36, // Metade de 72
-    bottom: 16, 
+    marginLeft: -42, // (width / 2)
+    width: 84,
+    height: 84,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
+    zIndex: 100,
   },
-  glowEffect: {
+  
+  // Camadas de Glow (simulando box-shadow suave)
+  glowWrapper: {
     position: 'absolute',
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: '#FF3B5C',
-    opacity: 0.5,
-    shadowColor: '#FF3B5C',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 20,
-    elevation: 20,
-  },
-  sosTouchable: {
-    width: 82, // 72 + padding
-    height: 82,
-    borderRadius: 41,
-    backgroundColor: '#000000', // Mesma cor da tab bar
-    padding: 5, // Borda
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    width: 130,
+    height: 130,
   },
-  sosButton: {
-    width: 72,
+  glowOuter: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 23, 68, 0.08)',
+  },
+  glowInner: {
+    position: 'absolute',
+    width: 85,
+    height: 85,
+    borderRadius: 42.5,
+    backgroundColor: 'rgba(255, 23, 68, 0.15)',
+    shadowColor: '#FF1744',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+
+  // Ring externo e Corpo físico
+  sosButtonOuter: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#4A0000', // Ring esmeralda/vinho muito escuro (#8B0000 base + sombra)
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+    elevation: 15,
+    // Efeito de gradiente do ring (topo claro, base escura)
+    borderTopWidth: 2,
+    borderTopColor: '#A00000',
+    borderBottomWidth: 3,
+    borderBottomColor: '#200000',
+  },
+  sosButtonInner: {
+    width: 72, // Ring com ~4px de espessura de cada lado (80-72=8)
     height: 72,
     borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    // Sombra interna 3D (simulada por bordas)
+    borderTopWidth: 1.5,
+    borderTopColor: 'rgba(255,255,255,0.4)',
+    borderBottomWidth: 2,
+    borderBottomColor: 'rgba(0,0,0,0.5)',
   },
-  sosTopHighlight: {
+  
+  // Efeito "físico" de luz 3D translúcida no topo
+  sosHighlight: {
     position: 'absolute',
-    top: -6,
+    top: 0,
+    left: '10%',
     width: '80%',
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    transform: [{ scaleX: 1.4 }],
+    height: '40%',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderBottomLeftRadius: 100,
+    borderBottomRightRadius: 100,
+    transform: [{ scaleX: 1.2 }], // Alonga o semicírculo
   },
-  sosTextContainer: {
-    transform: [{ scaleX: 1.8 }], 
+
+  // Textos
+  sosTextWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: -2,
-    marginBottom: 0,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  sosText: {
+  sosTextMain: {
     color: '#FFFFFF',
     fontWeight: '900',
-    fontSize: 15, 
-    letterSpacing: 1.5,
-    fontFamily: typography.fontFamily.black,
-    textShadowColor: 'rgba(255,255,255,0.4)', 
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
+    fontSize: 20,
+    letterSpacing: 0.5,
   },
-  sosSubText: {
+  sosTextSub: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 6.5,
-    letterSpacing: 1.5,
-    lineHeight: 8,
-    fontFamily: typography.fontFamily.bold,
+    fontWeight: '800',
+    fontSize: 8,
+    letterSpacing: 1.5, // 0.2em
+    marginTop: -2,
   },
 });

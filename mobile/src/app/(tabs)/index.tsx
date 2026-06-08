@@ -23,6 +23,7 @@ import { useAlerts } from '@/hooks/useAlerts';
 import { useLocation } from '@/hooks/useLocation';
 import { GaugeChart, type RiskLevel } from '@/components/ui/GaugeChart';
 import type { Alert } from '@/types';
+import { useMenu } from '@/contexts/MenuContext';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -84,6 +85,7 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const { location } = useLocation();
   const { alerts, loading } = useAlerts(location);
+  const { openMenu } = useMenu();
 
   const firstName = (user?.user_metadata?.display_name as string | undefined)
     ?.split(' ')[0] ?? 'Cidadão';
@@ -128,7 +130,11 @@ export default function HomeScreen() {
       >
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.iconButton} accessibilityLabel="Menu">
+          <TouchableOpacity 
+            style={styles.iconButton} 
+            accessibilityLabel="Menu"
+            onPress={openMenu}
+          >
             <Menu color={colors.textPrimary} size={22} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.bellButton} accessibilityLabel="Notificações">
@@ -257,7 +263,8 @@ export default function HomeScreen() {
           );
         })}
 
-        <View style={{ height: spacing.xxl }} />
+        {/* Espaçamento extra no final para a CustomTabBar não cobrir o último item */}
+        <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>
   );
