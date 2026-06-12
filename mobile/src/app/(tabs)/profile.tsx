@@ -55,6 +55,7 @@ export default function ProfileScreen() {
     { id: 'location', icon: MapPin, label: 'Localização', onPress: () => {} },
     { id: 'about', icon: Info, label: 'Sobre o Ágora', onPress: () => {} },
     { id: 'auth', icon: ShieldCheck, label: 'Autenticação', onPress: () => {} },
+    { id: 'contacts', icon: Users, label: 'Contatos', onPress: () => {} },
   ];
 
   const statusMap: Record<string, { label: string; color: string; bg: string }> = {
