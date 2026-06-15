@@ -26,16 +26,18 @@ import { colors } from '@/theme/colors';
 // Impedir que a splash feche antes das fontes carregarem
 SplashScreen.preventAutoHideAsync();
 
-import { useRouter, useSegments } from 'expo-router';
+import { useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
 function RouteGuard() {
   const { session, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const rootNavigationState = useRootNavigationState();
 
   useEffect(() => {
-    if (isLoading) return;
+    // Só prossegue se a autenticação já carregou e o roteador estiver montado
+    if (isLoading || !rootNavigationState?.key) return;
 
     const inAuthGroup = segments[0] === '(auth)';
 
@@ -46,7 +48,7 @@ function RouteGuard() {
       // Com sessão -> pular para o mapa
       router.replace('/(tabs)');
     }
-  }, [session, isLoading, segments]);
+  }, [session, isLoading, segments, rootNavigationState]);
 
   return (
     <>
