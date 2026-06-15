@@ -38,13 +38,28 @@ function RouteGuard() {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inAdminGroup = segments[0] === 'admin';
+
 
     if (!session && !inAuthGroup) {
-      // Sem sessão -> forçar welcome
-      router.replace('/(auth)/welcome');
+      console.log('[RouteGuard] Redirecting to login: no session and not in auth group');
+      router.replace('/(auth)/login');
     } else if (session && inAuthGroup) {
-      // Com sessão -> pular para o mapa
+      // Com sessão -> redirecionar para as abas (admins e usuários comuns)
+      console.log('[RouteGuard] Authenticated in auth group. Redirecting to /(tabs)');
       router.replace('/(tabs)');
+    } else if (session && inAdminGroup) {
+      const email = session.user?.email || '';
+      const role = session.user?.user_metadata?.role;
+      const isKaua = email.toLowerCase() === 'kauathierry86@gmail.com';
+      const isCesar = email.toLowerCase() === 'cesar57420926@edu.df.senac' || email.toLowerCase() === 'cesar57420926@edu.df.senac.br';
+      const isAdmin = isKaua || isCesar || role === 'admin';
+      
+      console.log('[RouteGuard] In admin group. Is admin?', isAdmin);
+      if (!isAdmin) {
+        console.log('[RouteGuard] Unauthorized access to admin. Redirecting to /(tabs)');
+        router.replace('/(tabs)');
+      }
     }
   }, [session, isLoading, segments]);
 
@@ -60,6 +75,7 @@ function RouteGuard() {
       >
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="admin" />
         <Stack.Screen 
           name="report-modal" 
           options={{

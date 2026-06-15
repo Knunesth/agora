@@ -18,6 +18,8 @@ export default function TabLayout() {
         <Tabs.Screen name="alerts"  options={{ title: 'Alertas' }} />
         <Tabs.Screen name="profile" options={{ title: 'Perfil' }} />
         <Tabs.Screen name="partners" options={{ href: null, title: 'Lojas parceiras' }} />
+        <Tabs.Screen name="contacts" options={{ href: null, title: 'Contatos' }} />
+        <Tabs.Screen name="about"    options={{ href: null, title: 'Sobre o Ágora' }} />
       </Tabs>
     </MenuProvider>
   );
