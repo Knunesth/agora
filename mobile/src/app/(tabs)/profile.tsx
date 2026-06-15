@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
-  Bell, Lock, MapPin, Info, ShieldCheck, LogOut, ChevronRight,
+  Bell, Lock, MapPin, Info, ShieldCheck, LogOut, ChevronRight, Users,
 } from 'lucide-react-native';
 import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
@@ -49,13 +49,29 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const email = user?.email || '';
+  const role = user?.user_metadata?.role;
+  const isKaua = email.toLowerCase() === 'kauathierry86@gmail.com';
+  const isCesar = email.toLowerCase() === 'cesar57420926@edu.df.senac' || email.toLowerCase() === 'cesar57420926@edu.df.senac.br';
+  const isAdmin = isKaua || isCesar || role === 'admin';
+
   const menuItems = [
     { id: 'notifications', icon: Bell, label: 'Notificações', onPress: () => {} },
     { id: 'privacy', icon: Lock, label: 'Privacidade', onPress: () => {} },
     { id: 'location', icon: MapPin, label: 'Localização', onPress: () => {} },
-    { id: 'about', icon: Info, label: 'Sobre o Ágora', onPress: () => {} },
+    { id: 'about', icon: Info, label: 'Sobre o Ágora', onPress: () => router.push('/(tabs)/about') },
     { id: 'auth', icon: ShieldCheck, label: 'Autenticação', onPress: () => {} },
+    { id: 'contacts', icon: Users, label: 'Contatos', onPress: () => router.push('/(tabs)/contacts') },
   ];
+
+  if (isAdmin) {
+    menuItems.push({
+      id: 'admin',
+      icon: ShieldCheck,
+      label: 'Painel Administrativo',
+      onPress: () => router.push('/admin'),
+    });
+  }
 
   const statusMap: Record<string, { label: string; color: string; bg: string }> = {
     verified:   { label: 'CONFIRMADA', color: colors.primary,  bg: colors.primaryMuted },
