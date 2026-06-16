@@ -3,7 +3,7 @@
  * Usa apenas RNText nativo para evitar o crash "Text strings must be rendered within a Text component".
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, KeyboardAvoidingView,
   Platform, Alert, Image, Text as RNText, ScrollView,
@@ -26,21 +26,33 @@ export default function LoginScreen() {
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading,    setIsLoading]    = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const isLoadingRef = useRef(false);
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: any) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (isLoadingRef.current) return;
+
     if (!email || !password) {
       Alert.alert('Atenção', 'Preencha email e senha.');
       return;
     }
+
+    isLoadingRef.current = true;
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    setIsLoading(false);
-    if (error) {
-      Alert.alert('Erro no Login', error.message);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) {
+        Alert.alert('Erro no Login', error.message);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      isLoadingRef.current = false;
+      setIsLoading(false);
     }
     // RouteGuard cuida do redirecionamento pós-login.
   };

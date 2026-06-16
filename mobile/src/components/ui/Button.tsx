@@ -12,6 +12,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   type ViewStyle,
+  Platform,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -22,6 +23,7 @@ import { colors } from '@/theme/colors';
 import { typography } from '@/theme/typography';
 import { borderRadius, spacing } from '@/theme/spacing';
 import { Text } from './Text';
+import { useAccessibility } from '@/contexts/AccessibilityContext';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -68,6 +70,7 @@ export function Button({
   const variantStyle = variantStyles[variant];
   const sizeStyle = sizeStyles[size];
   const isDisabled = disabled || loading;
+  const { largeTouchTargets } = useAccessibility();
 
   return (
     <AnimatedPressable
@@ -79,6 +82,7 @@ export function Button({
         styles.base,
         variantStyle.container,
         sizeStyle.container,
+        largeTouchTargets && { minHeight: 56 },
         isDisabled && styles.disabled,
         animatedStyle,
         style,
@@ -125,10 +129,12 @@ const variantStyles = {
   primary: {
     container: {
       backgroundColor: colors.primary,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.6,
-      shadowRadius: 12,
+      ...(Platform.OS !== 'web' && {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.6,
+        shadowRadius: 12,
+      }),
       elevation: 8, // Glow para Android
     } as ViewStyle,
     textColor: colors.textInverse,

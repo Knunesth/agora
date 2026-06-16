@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, type TextInputProps, type ViewStyle, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet, type TextInputProps, type ViewStyle, TouchableOpacity, Platform } from 'react-native';
 import { colors } from '@/theme/colors';
 import { spacing, borderRadius } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
@@ -93,6 +93,9 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.regular,
     fontSize: typography.fontSize.body,
     height: '100%',
+    ...Platform.select({
+      web: { outlineStyle: 'none' } as any,
+    }),
   },
   iconLeftContainer: {
     justifyContent: 'center',

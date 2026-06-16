@@ -142,10 +142,12 @@ const styles = StyleSheet.create({
     borderColor: '#242424',
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.6,
-    shadowRadius: 15,
+    ...(Platform.OS !== 'web' && {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.6,
+      shadowRadius: 15,
+    }),
     elevation: 20,
   },
   side: {
@@ -225,10 +227,12 @@ const styles = StyleSheet.create({
     height: 85,
     borderRadius: 42.5,
     backgroundColor: 'rgba(255, 23, 68, 0.15)',
-    shadowColor: '#FF1744',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+    ...(Platform.OS !== 'web' && {
+      shadowColor: '#FF1744',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.5,
+      shadowRadius: 10,
+    }),
     elevation: 8,
   },
 
@@ -240,10 +244,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#4A0000', // Ring esmeralda/vinho muito escuro (#8B0000 base + sombra)
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
+    ...(Platform.OS !== 'web' && {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.6,
+      shadowRadius: 10,
+    }),
     elevation: 15,
     // Efeito de gradiente do ring (topo claro, base escura)
     borderTopWidth: 2,
@@ -283,9 +289,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -2,
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    ...(Platform.OS !== 'web' && {
+      textShadowColor: 'rgba(0,0,0,0.3)',
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 4,
+    }),
   },
   sosTextMain: {
     color: '#FFFFFF',

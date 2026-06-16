@@ -20,6 +20,7 @@ export default ({ config }) => {
         NSLocationAlwaysAndWhenInUseUsageDescription: "O Ágora usa sua localização em segundo plano para enviar alertas de emergência SOS aos seus contatos.",
         NSCameraUsageDescription: "O Ágora precisa da câmera para registrar evidências fotográficas de ocorrências."
       },
+      associatedDomains: ["applinks:agora.app"],
       config: googleMapsApiKey ? {
         googleMapsApiKey,
       } : undefined
@@ -34,6 +35,13 @@ export default ({ config }) => {
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "CAMERA"
+      ],
+      intentFilters: [
+        {
+          action: "VIEW",
+          data: [{ scheme: "agora", host: "convite" }],
+          category: ["BROWSABLE", "DEFAULT"]
+        }
       ],
       config: googleMapsApiKey ? {
         googleMaps: {
@@ -66,7 +74,8 @@ export default ({ config }) => {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 180
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     experiments: {
       typedRoutes: true,

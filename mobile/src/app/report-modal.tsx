@@ -188,7 +188,7 @@ export default function ReportModal() {
             O Ágora precisa da sua câmera para registrar a evidência.
           </Text>
           <Button title="Conceder Permissão" onPress={requestPermission} />
-          <Button title="Voltar" variant="outline" onPress={() => setShowCamera(false)} style={{marginTop: 16}} />
+          <Button title="Voltar" variant="secondary" onPress={() => setShowCamera(false)} style={{marginTop: 16}} />
         </View>
       );
     }
@@ -354,15 +354,15 @@ export default function ReportModal() {
           <View style={styles.evidencePlaceholder} />
         </View>
 
-        {/* Submit Button */}
-        <Button 
-          title={isSubmitting ? "ENVIANDO..." : "ALERTAR SITUAÇÃO"} 
-          variant="primary"
-          onPress={submitAlert}
-          disabled={isSubmitting || locLoading}
-          style={styles.submitButton}
-          textStyle={styles.submitButtonText}
-        />
+        <View style={{ position: 'absolute', bottom: spacing.xxl, left: spacing.lg, right: spacing.lg }}>
+          <Button 
+            title="ALERTAR SITUAÇÃO" 
+            onPress={submitAlert} 
+            loading={isSubmitting}
+            variant="primary"
+            style={{ borderRadius: 16, paddingVertical: 18, backgroundColor: '#00E676' }}
+          />
+        </View>
       </ScrollView>
 
       {isSubmitting && (

@@ -2,7 +2,7 @@
  * Ágora — Tela de Cadastro Renovada (Sprint 8)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { Text, Button, Input } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { supabase } from '@/services/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -22,8 +23,12 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const isLoadingRef = useRef(false);
 
-  const handleRegister = async () => {
+  const handleRegister = async (e?: any) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (isLoadingRef.current) return;
+
     if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Atenção', 'Preencha todos os campos obrigatórios.');
       return;
@@ -37,24 +42,38 @@ export default function RegisterScreen() {
       return;
     }
 
+    isLoadingRef.current = true;
     setIsLoading(true);
-    // Aqui incluímos o Nome (display_name) nos metadados para salvar no Supabase Auth
-    const { error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        data: {
-          display_name: name.trim(),
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            display_name: name.trim(),
+          }
         }
-      }
-    });
-    setIsLoading(false);
+      });
 
-    if (error) {
-      Alert.alert('Erro no Cadastro', error.message);
-    } else {
-      // Direciona para a tela de Sucesso do fluxo visual
-      router.push('/(auth)/success');
+      if (error) {
+        Alert.alert('Erro no Cadastro', error.message);
+      } else {
+        // Verificar se existe convite pendente e aceitar
+        const pendingInvite = await AsyncStorage.getItem('pending_invite');
+        if (pendingInvite) {
+          await supabase.functions.invoke('accept-invite', {
+            body: { invite_code: pendingInvite }
+          });
+          await AsyncStorage.removeItem('pending_invite');
+        }
+
+        router.push('/(auth)/success');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      isLoadingRef.current = false;
+      setIsLoading(false);
     }
   };
 
@@ -94,7 +113,7 @@ export default function RegisterScreen() {
             />
 
             <Input
-              placeholder="gaby@exemplo.com"
+              placeholder="exemplo@email.com"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -103,7 +122,7 @@ export default function RegisterScreen() {
             />
 
             <Input
-              placeholder="(11) 99999-9999"
+              placeholder="(00) 00000-0000"
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"

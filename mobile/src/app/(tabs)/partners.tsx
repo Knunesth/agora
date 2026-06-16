@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     color: '#FFF',
     fontSize: 24,
-    fontFamily: typography.fontFamily.black,
+    fontFamily: typography.fontFamily.extraBold,
   },
   heroSubtitle: {
     color: 'rgba(255,255,255,0.8)',
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: '#FFF',
-    fontFamily: typography.fontFamily.black,
+    fontFamily: typography.fontFamily.extraBold,
     fontSize: 15,
   },
   cardCategory: {

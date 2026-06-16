@@ -6,7 +6,7 @@
  */
 
 
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Marker } from 'react-native-maps';
 import { Alert, RiskCategory } from '@/types';
 import { colors } from '@/theme/colors';
@@ -74,10 +74,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: colors.background, // Furo visual para destacar o inner dot
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 3,
+    ...(Platform.OS !== 'web' && {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.4,
+      shadowRadius: 3,
+    }),
     elevation: 4,
   },
   innerDot: {

@@ -26,6 +26,7 @@ import {
   Pressable,
   StyleSheet,
   View,
+  Platform,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -170,10 +171,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     // Glow effect
-    shadowColor: SOS_COLORS.bg,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 16,
+    ...(Platform.OS !== 'web' && {
+      shadowColor: SOS_COLORS.bg,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.7,
+      shadowRadius: 16,
+    }),
     elevation: 12,
   },
   disabled: {

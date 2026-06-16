@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text as RNText, Image, Modal, Linking } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text as RNText, Image, Modal, Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
@@ -144,10 +144,12 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     borderBottomRightRadius: 32,
     paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 10, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
+    ...(Platform.OS !== 'web' && {
+      shadowColor: '#000',
+      shadowOffset: { width: 10, height: 0 },
+      shadowOpacity: 0.5,
+      shadowRadius: 20,
+    }),
     elevation: 20,
   },
   closeButton: {

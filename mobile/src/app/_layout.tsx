@@ -27,7 +27,11 @@ import { colors } from '@/theme/colors';
 SplashScreen.preventAutoHideAsync();
 
 import { useRouter, useSegments, useRootNavigationState } from 'expo-router';
+import * as Linking from 'expo-linking';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { AccessibilityProvider } from '@/contexts/AccessibilityContext';
+import { supabase } from '@/services/supabase';
 
 function RouteGuard() {
   const { session, isLoading } = useAuth();
@@ -40,8 +44,6 @@ function RouteGuard() {
     if (isLoading || !rootNavigationState?.key) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    const inAdminGroup = segments[0] === 'admin';
-
 
     if (!session && !inAuthGroup) {
       console.log('[RouteGuard] Redirecting to login: no session and not in auth group');
@@ -50,20 +52,42 @@ function RouteGuard() {
       // Com sessão -> redirecionar para as abas (admins e usuários comuns)
       console.log('[RouteGuard] Authenticated in auth group. Redirecting to /(tabs)');
       router.replace('/(tabs)');
-    } else if (session && inAdminGroup) {
-      const email = session.user?.email || '';
-      const role = session.user?.user_metadata?.role;
-      const isKaua = email.toLowerCase() === 'kauathierry86@gmail.com';
-      const isCesar = email.toLowerCase() === 'cesar57420926@edu.df.senac' || email.toLowerCase() === 'cesar57420926@edu.df.senac.br';
-      const isAdmin = isKaua || isCesar || role === 'admin';
-      
-      console.log('[RouteGuard] In admin group. Is admin?', isAdmin);
-      if (!isAdmin) {
-        console.log('[RouteGuard] Unauthorized access to admin. Redirecting to /(tabs)');
-        router.replace('/(tabs)');
-      }
     }
   }, [session, isLoading, segments, rootNavigationState]);
+
+  useEffect(() => {
+    const handleDeepLink = async (url: string) => {
+      try {
+        const parsed = Linking.parse(url);
+        const path = parsed.path || '';
+        
+        // Exemplo: agora://convite/ABCDEF
+        if (path.startsWith('convite/')) {
+          const inviteCode = path.replace('convite/', '');
+          await AsyncStorage.setItem('pending_invite', inviteCode);
+          
+          if (session) {
+            // Se já está logado, aceita o convite imediatamente
+            await supabase.functions.invoke('accept-invite', {
+              body: { invite_code: inviteCode }
+            });
+            await AsyncStorage.removeItem('pending_invite');
+            // Redireciona para contatos para ver a novidade
+            router.push('/settings/contacts');
+          } else {
+            // Se não está logado, manda pra tela de welcome do convite
+            router.replace('/(auth)/invite-welcome');
+          }
+        }
+      } catch (e) {
+        console.error('[DeepLink Error]', e);
+      }
+    };
+
+    Linking.getInitialURL().then(url => { if (url) handleDeepLink(url); });
+    const sub = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
+    return () => sub.remove();
+  }, [session]);
 
   return (
     <>
@@ -77,7 +101,6 @@ function RouteGuard() {
       >
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="admin" />
         <Stack.Screen 
           name="report-modal" 
           options={{
@@ -110,8 +133,10 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <RouteGuard />
-    </AuthProvider>
+    <AccessibilityProvider>
+      <AuthProvider>
+        <RouteGuard />
+      </AuthProvider>
+    </AccessibilityProvider>
   );
 }

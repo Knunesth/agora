@@ -17,21 +17,42 @@ import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing, borderRadius } from '@/theme/spacing';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAlerts } from '@/hooks/useAlerts';
 import { useLocation } from '@/hooks/useLocation';
+import { useAlerts } from '@/hooks/useAlerts';
 import { supabase } from '@/services/supabase';
+import { Settings as SettingsIcon, Pencil } from 'lucide-react-native';
+import { useFocusEffect } from 'expo-router';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { location } = useLocation();
   const { alerts } = useAlerts(location);
+  const [profileName, setProfileName] = React.useState('Cidadão');
+  const [isAdminDB, setIsAdminDB] = React.useState(false);
 
-  const fullName = user?.user_metadata?.display_name ?? 'Cidadão';
-  const initials = fullName
+  const loadProfileData = React.useCallback(() => {
+    if (user?.id) {
+      supabase.from('user_profiles').select('display_name, is_admin').eq('id', user.id).single()
+        .then(({ data }) => {
+          if (data) {
+            if (data.display_name) setProfileName(data.display_name);
+            if (data.is_admin) setIsAdminDB(data.is_admin);
+          }
+        });
+    }
+  }, [user]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadProfileData();
+    }, [loadProfileData])
+  );
+
+  const initials = (profileName || 'Cidadão')
     .split(' ')
     .slice(0, 2)
-    .map((n: string) => n[0])
+    .map((n: string) => n?.[0] || '')
     .join('')
     .toUpperCase();
 
@@ -53,15 +74,16 @@ export default function ProfileScreen() {
   const role = user?.user_metadata?.role;
   const isKaua = email.toLowerCase() === 'kauathierry86@gmail.com';
   const isCesar = email.toLowerCase() === 'cesar57420926@edu.df.senac' || email.toLowerCase() === 'cesar57420926@edu.df.senac.br';
-  const isAdmin = isKaua || isCesar || role === 'admin';
+  const isAdmin = isKaua || isCesar || role === 'admin' || isAdminDB;
 
   const menuItems = [
-    { id: 'notifications', icon: Bell, label: 'Notificações', onPress: () => {} },
-    { id: 'privacy', icon: Lock, label: 'Privacidade', onPress: () => {} },
-    { id: 'location', icon: MapPin, label: 'Localização', onPress: () => {} },
-    { id: 'about', icon: Info, label: 'Sobre o Ágora', onPress: () => router.push('/(tabs)/about') },
-    { id: 'auth', icon: ShieldCheck, label: 'Autenticação', onPress: () => {} },
-    { id: 'contacts', icon: Users, label: 'Contatos', onPress: () => router.push('/(tabs)/contacts') },
+    { id: 'notifications', icon: Bell, label: 'Notificações', onPress: () => router.push('/settings/notifications') },
+    { id: 'privacy', icon: Lock, label: 'Privacidade', onPress: () => router.push('/settings/privacy') },
+    { id: 'location', icon: MapPin, label: 'Localização', onPress: () => router.push('/settings/location') },
+    { id: 'accessibility', icon: SettingsIcon, label: 'Acessibilidade', onPress: () => router.push('/settings/accessibility') },
+    { id: 'about', icon: Info, label: 'Sobre o Ágora', onPress: () => router.push('/settings/about') },
+    { id: 'auth', icon: ShieldCheck, label: 'Autenticação', onPress: () => router.push('/settings/auth') },
+    { id: 'contacts', icon: Users, label: 'Contatos', onPress: () => router.push('/settings/contacts') },
   ];
 
   if (isAdmin) {
@@ -69,7 +91,7 @@ export default function ProfileScreen() {
       id: 'admin',
       icon: ShieldCheck,
       label: 'Painel Administrativo',
-      onPress: () => router.push('/admin'),
+      onPress: () => router.push('/settings/admin'),
     });
   }
 
@@ -84,6 +106,13 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
+        <View style={styles.header}>
+          <Text variant="h2" style={styles.headerTitle}>Meu Perfil</Text>
+          <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/settings/edit-profile')}>
+            <Pencil color={colors.textPrimary} size={20} />
+          </TouchableOpacity>
+        </View>
+
         {/* Avatar + Badge */}
         <View style={styles.avatarSection}>
           <View style={styles.avatar}>
@@ -92,7 +121,7 @@ export default function ProfileScreen() {
           <View style={styles.activeBadge}>
             <Text style={styles.activeBadgeText}>● CIDADÃO ATIVO</Text>
           </View>
-          <Text variant="h3" style={styles.name}>{fullName}</Text>
+          <Text variant="h3" style={styles.name}>{profileName}</Text>
           <Text variant="caption" color={colors.textMuted}>{user?.email}</Text>
         </View>
 
@@ -124,7 +153,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {myAlerts.slice(0, 6).map((alert) => {
+        {(myAlerts || []).slice(0, 6).map((alert) => {
           const s = statusMap[alert.status] ?? statusMap.expired;
           const date = new Date(alert.createdAt).toLocaleDateString('pt-BR');
 
@@ -151,7 +180,7 @@ export default function ProfileScreen() {
         </Text>
 
         <View style={styles.menuCard}>
-          {menuItems.map((item, index) => (
+          {(menuItems || []).map((item, index) => (
             <TouchableOpacity
               key={item.id}
               style={[
@@ -184,6 +213,22 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0D0D0D' },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceBorder,
+  },
+  editBtn: {
+    padding: spacing.sm,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 20,
+  },
+  headerTitle: { flex: 1, color: colors.textPrimary },
 
   avatarSection: { alignItems: 'center', marginBottom: spacing.xl },
   avatar: {

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { colors } from '@/theme/colors';
 import { typography } from '@/theme/typography';
+import { useAccessibility } from '@/contexts/AccessibilityContext';
 
 type TextVariant =
   | 'display'
@@ -101,10 +102,17 @@ export function Text({
   children,
   ...props
 }: TextProps) {
+  const { fontSizeMultiplier } = useAccessibility();
+  const baseStyle = variantStyles[variant] as any;
+  const scaledFontSize = baseStyle?.fontSize ? baseStyle.fontSize * fontSizeMultiplier : undefined;
+  const scaledLineHeight = baseStyle?.lineHeight ? baseStyle.lineHeight * fontSizeMultiplier : undefined;
+
   return (
     <RNText
       style={[
-        variantStyles[variant],
+        baseStyle,
+        scaledFontSize ? { fontSize: scaledFontSize } : undefined,
+        scaledLineHeight ? { lineHeight: scaledLineHeight } : undefined,
         { color, textAlign: align },
         bold && { fontFamily: typography.fontFamily.bold },
         style,

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert as RNAlert, Linking } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert as RNAlert, Linking, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Plus, Menu, Triangle, Search, Mic, Home, Briefcase, Clock, MapPin, Navigation, Map as MapIcon, Bike, Car } from 'lucide-react-native';
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
   destinationPin: {
     width: 20, height: 20, borderRadius: 10, backgroundColor: '#FF1744',
     borderWidth: 3, borderColor: '#FFF',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5,
+    ...(Platform.OS !== 'web' && { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 }), elevation: 5,
   },
   destinationPinTip: {
     width: 0, height: 0, backgroundColor: 'transparent', borderStyle: 'solid',
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     position: 'absolute', left: 20, right: 20, zIndex: 15,
     backgroundColor: '#111', borderRadius: 16, padding: 16,
     borderWidth: 1, borderColor: '#333',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 15,
+    ...(Platform.OS !== 'web' && { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.5, shadowRadius: 10 }), elevation: 15,
   },
   routeSummaryHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   safeBadge: { backgroundColor: 'rgba(0,200,83,0.15)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },

@@ -16,9 +16,19 @@ export function useAlerts(userLocation: GeoCoords | null) {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [lastFetchedLocation, setLastFetchedLocation] = useState<GeoCoords | null>(null);
 
   const fetchAlerts = useCallback(async () => {
     if (!userLocation) return;
+
+    // Threshold debounce (~100m)
+    if (lastFetchedLocation) {
+      const latDiff = Math.abs(userLocation.latitude - lastFetchedLocation.latitude);
+      const lngDiff = Math.abs(userLocation.longitude - lastFetchedLocation.longitude);
+      if (latDiff < 0.001 && lngDiff < 0.001) {
+        return; // Pula o fetch se andou muito pouco
+      }
+    }
 
     try {
       setLoading(true);
@@ -51,6 +61,7 @@ export function useAlerts(userLocation: GeoCoords | null) {
       }));
 
       setAlerts(formattedAlerts);
+      setLastFetchedLocation(userLocation);
     } catch (err: any) {
       console.error('[Supabase] Erro ao buscar alertas:', err.message);
       setErrorMsg('Falha ao sincronizar alertas da região.');

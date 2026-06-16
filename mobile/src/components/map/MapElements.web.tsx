@@ -1,6 +1,13 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 
-export const Circle = (props: any) => {
+export interface CircleProps {
+  center?: { latitude: number; longitude: number };
+  radius?: number;
+  strokeColor?: string;
+  fillColor?: string;
+}
+
+export const Circle = (props: CircleProps) => {
   const [LeafletCircle, setLeafletCircle] = useState<any>(null);
 
   useEffect(() => {
@@ -22,7 +29,13 @@ export const Circle = (props: any) => {
   );
 };
 
-export const Marker = (props: any) => {
+export interface MarkerProps {
+  coordinate?: { latitude: number; longitude: number };
+  draggable?: boolean;
+  onDragEnd?: (e: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => void;
+}
+
+export const Marker = (props: MarkerProps) => {
   const [LeafletMarker, setLeafletMarker] = useState<any>(null);
   const [CustomIcon, setCustomIcon] = useState<any>(null);
   const markerRef = useRef<any>(null);

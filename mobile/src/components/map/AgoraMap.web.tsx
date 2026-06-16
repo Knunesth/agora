@@ -1,7 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, StyleProp, ViewStyle } from 'react-native';
 
-export function AgoraMap({ children, style, initialRegion, onPress }: any) {
+interface Region {
+  latitude: number;
+  longitude: number;
+  latitudeDelta?: number;
+  longitudeDelta?: number;
+}
+
+interface MapEvent {
+  nativeEvent: { coordinate: { latitude: number; longitude: number } };
+}
+
+export interface AgoraMapProps {
+  children?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+  initialRegion?: Region;
+  onPress?: (e: MapEvent) => void;
+}
+
+export function AgoraMap({ children, style, initialRegion, onPress }: AgoraMapProps) {
   const [MapModule, setMapModule] = useState<any>(null);
 
   useEffect(() => {
