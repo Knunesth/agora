@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Linking, Switch, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Linking, Switch, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
@@ -19,7 +19,11 @@ export default function AccessibilityScreen() {
   } = useAccessibility();
 
   const handleOpenAccessibilitySettings = () => {
-    Linking.openSettings();
+    Alert.alert(
+      'Em breve', 
+      'Esta funcionalidade estará disponível na próxima versão do Ágora.',
+      [{ text: 'OK' }]
+    );
   };
 
   return (

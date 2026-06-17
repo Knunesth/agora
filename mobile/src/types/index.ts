@@ -27,6 +27,7 @@ export interface Alert {
   expiresAt: string;
   photoUrl?: string;
   userId: string;
+  userName?: string;
 }
 
 /** Modelo do perfil do usuário */

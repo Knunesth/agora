@@ -1,17 +1,22 @@
 import React, { useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Text as RNText, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text as RNText, Platform, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { LongPressGestureHandler, State } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
   withRepeat, 
   withTiming, 
   Easing, 
-  withSequence 
+  withSequence,
+  withSpring
 } from 'react-native-reanimated';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Home, Map, Bell, User } from 'lucide-react-native';
+import { supabase } from '@/services/supabase';
+import { useLocation } from '@/hooks/useLocation';
 
 const TAB_CONFIG: Record<string, { icon: React.FC<any>; label: string }> = {
   index:   { icon: Home, label: 'Início' },
@@ -22,6 +27,8 @@ const TAB_CONFIG: Record<string, { icon: React.FC<any>; label: string }> = {
 
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { location: userLocation } = useLocation();
   
   // Animação de pulso do Glow externo (escala de 1.0 a 1.08 em 2s loop)
   const glowScale = useSharedValue(1);
@@ -40,6 +47,16 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const animatedGlow = useAnimatedStyle(() => ({
     transform: [{ scale: glowScale.value }],
   }));
+
+  const sosScale = useSharedValue(1);
+  const animatedSosButton = useAnimatedStyle(() => ({
+    transform: [{ scale: sosScale.value }],
+  }));
+
+  const handleSOSActivate = async () => {
+    // Apenas navega para o modal de SOS
+    router.push('/sos-modal');
+  };
 
   const visibleRoutes = state.routes.filter(r => TAB_CONFIG[r.name]);
   const leftRoutes  = visibleRoutes.slice(0, 2);
@@ -103,22 +120,43 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         </Animated.View>
 
         {/* Botão Físico SOS */}
-        <TouchableOpacity activeOpacity={0.85} style={styles.sosButtonOuter}>
-          <LinearGradient
-            colors={['#FF5555', '#990000']}
-            start={{ x: 0.2, y: 0 }}
-            end={{ x: 0.8, y: 1 }}
-            style={styles.sosButtonInner}
-          >
-            {/* Efeito 3D Highlight no topo */}
-            <View style={styles.sosHighlight} />
-            
-            <View style={styles.sosTextWrapper}>
-              <RNText style={styles.sosTextMain}>SOS</RNText>
-              <RNText style={styles.sosTextSub}>EMERGÊNCIA</RNText>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
+        <LongPressGestureHandler
+          onHandlerStateChange={({ nativeEvent }) => {
+            if (nativeEvent.state === State.BEGAN) {
+              // Animação de 'encolher' e dar feedback de que está segurando
+              sosScale.value = withTiming(0.85, { duration: 800 });
+            } else if (nativeEvent.state === State.ACTIVE) {
+              // Terminou o tempo do long press: dispara e volta pro tamanho normal com mola
+              handleSOSActivate();
+              sosScale.value = withSpring(1, { damping: 12, stiffness: 200 });
+            } else if (
+              nativeEvent.state === State.FAILED ||
+              nativeEvent.state === State.CANCELLED ||
+              nativeEvent.state === State.END
+            ) {
+              // Soltou o dedo antes do tempo ou o gesto foi cancelado
+              sosScale.value = withSpring(1, { damping: 12, stiffness: 200 });
+            }
+          }}
+          minDurationMs={800}
+        >
+          <Animated.View style={[styles.sosButtonOuter, animatedSosButton]}>
+            <LinearGradient
+              colors={['#FF5555', '#990000']}
+              start={{ x: 0.2, y: 0 }}
+              end={{ x: 0.8, y: 1 }}
+              style={styles.sosButtonInner}
+            >
+              {/* Efeito 3D Highlight no topo */}
+              <View style={styles.sosHighlight} />
+              
+              <View style={styles.sosTextWrapper}>
+                <RNText style={styles.sosTextMain}>SOS</RNText>
+                <RNText style={styles.sosTextSub}>EMERGÊNCIA</RNText>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        </LongPressGestureHandler>
 
       </View>
     </View>

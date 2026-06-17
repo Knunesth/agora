@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text as RNText, Image, Modal, Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -20,6 +20,19 @@ export function MenuDrawer({ visible, onClose }: MenuDrawerProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useAuth();
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !visible) return;
+    supabase
+      .from('user_profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.avatar_url) setProfilePhotoUrl(data.avatar_url);
+      });
+  }, [user, visible]);
 
   const handleSignOut = async () => {
     onClose();
@@ -36,7 +49,9 @@ export function MenuDrawer({ visible, onClose }: MenuDrawerProps) {
     router.push(route);
   };
 
-  const avatarUrl = user?.user_metadata?.avatar_url;
+  const avatarUrl = profilePhotoUrl || user?.user_metadata?.avatar_url;
+  const displayName = (user?.user_metadata?.display_name as string | undefined) || user?.email?.split('@')[0] || 'Meu Perfil';
+  const email = user?.email || '';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -51,8 +66,12 @@ export function MenuDrawer({ visible, onClose }: MenuDrawerProps) {
             <X color="#8A8A8E" size={20} />
           </TouchableOpacity>
 
-          {/* Avatar no Header */}
-          <View style={styles.header}>
+          {/* Avatar no Header — clicável para ir ao perfil */}
+          <TouchableOpacity
+            style={styles.header}
+            onPress={() => handleNavigate('/(tabs)/profile')}
+            activeOpacity={0.7}
+          >
             <View style={styles.avatarGlow}>
               <View style={styles.avatarContainer}>
                 {avatarUrl ? (
@@ -62,7 +81,9 @@ export function MenuDrawer({ visible, onClose }: MenuDrawerProps) {
                 )}
               </View>
             </View>
-          </View>
+            <RNText style={styles.drawerUserName} numberOfLines={1}>{displayName}</RNText>
+            <RNText style={styles.drawerUserEmail} numberOfLines={1}>{email}</RNText>
+          </TouchableOpacity>
 
           {/* Menu Items */}
           <View style={styles.menuList}>
@@ -95,12 +116,12 @@ export function MenuDrawer({ visible, onClose }: MenuDrawerProps) {
 
             <View style={styles.divider} />
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('/(tabs)/profile')}>
               <Settings color="#8A8A8E" size={22} strokeWidth={2} />
               <RNText style={styles.menuLabel}>Configurações</RNText>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('/settings/about')}>
               <HelpCircle color="#B388FF" size={22} strokeWidth={2} />
               <RNText style={styles.menuLabel}>Ajuda e suporte</RNText>
             </TouchableOpacity>
@@ -170,6 +191,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
     marginTop: 20,
+  },
+  drawerUserName: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  drawerUserEmail: {
+    color: '#888888',
+    fontSize: 12,
+    marginTop: 2,
+    textAlign: 'center',
   },
   avatarGlow: {
     width: 100,

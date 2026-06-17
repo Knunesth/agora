@@ -5,10 +5,10 @@
 
 import React from 'react';
 import {
-  View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
+  View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Shield, Plus, AlertTriangle, Flame, ChevronRight } from 'lucide-react-native';
 import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
@@ -47,7 +47,13 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 export default function AlertsScreen() {
   const router = useRouter();
   const { location } = useLocation();
-  const { alerts, loading } = useAlerts(location);
+  const { alerts, loading, refetch } = useAlerts(location);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -111,11 +117,15 @@ export default function AlertsScreen() {
             <TouchableOpacity
               key={alert.id}
               style={styles.alertCard}
-              onPress={() => router.push('/alert-details' as any)}
+              onPress={() => router.push({ pathname: '/alert-details', params: { alert: JSON.stringify(alert) } })}
               accessibilityLabel={`Alerta: ${alert.category}`}
             >
               <View style={[styles.alertIconBox, { backgroundColor: risk.bg }]}>
-                <IconComp color={risk.color} size={22} />
+                {alert.photoUrl ? (
+                  <Image source={{ uri: alert.photoUrl }} style={styles.alertThumbnail} />
+                ) : (
+                  <IconComp color={risk.color} size={22} />
+                )}
               </View>
 
               <View style={styles.alertContent}>
@@ -180,6 +190,10 @@ const styles = StyleSheet.create({
   alertIconBox: {
     width: 44, height: 44, borderRadius: borderRadius.md,
     justifyContent: 'center', alignItems: 'center',
+    overflow: 'hidden',
+  },
+  alertThumbnail: {
+    width: '100%', height: '100%',
   },
   alertContent: { flex: 1, gap: spacing.xs },
   alertTopRow: {

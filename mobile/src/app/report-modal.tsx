@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Image, TextInput, ActivityIndicator
 import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
-import { ChevronLeft, Shield, Info, MapPin, Camera as CameraIcon, RotateCcw, X } from 'lucide-react-native';
+import { ChevronLeft, Shield, Info, MapPin, Camera as CameraIcon, RotateCcw, X, Search } from 'lucide-react-native';
 
 import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
@@ -15,6 +15,7 @@ import { useLocation } from '@/hooks/useLocation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AgoraMap } from '@/components/map/AgoraMap';
 import { Marker } from '@/components/map/MapElements';
+import { classifyAlert } from '@/services/groq';
 
 const CATEGORIES: { id: RiskCategory; label: string; icon: string }[] = [
   { id: 'iluminacao', label: 'Iluminação precária', icon: '🌑' },
@@ -35,6 +36,14 @@ export default function ReportModal() {
   const [category, setCategory] = useState<RiskCategory>('iluminacao');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
+  // States do Groq (IA)
+  const [isClassifying, setIsClassifying] = useState(false);
+  const [suggestedCategory, setSuggestedCategory] = useState<RiskCategory | null>(null);
+  const [suggestionMessage, setSuggestionMessage] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<RiskCategory | null>(null);
 
   // States de localização
   const { location, errorMsg, loading: locLoading } = useLocation();
@@ -89,6 +98,44 @@ export default function ReportModal() {
     fetchAddress();
   }, [selectedLocation]);
 
+  // IA Groq: Analisa a descrição após 1s de digitação
+  useEffect(() => {
+    if (description.trim().length < 15) {
+      setSuggestedCategory(null);
+      setSuggestionMessage('');
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsClassifying(true);
+      
+      let groqTimeout: NodeJS.Timeout;
+      
+      const groqPromise = classifyAlert(description);
+      const timeoutPromise = new Promise((_, reject) => {
+        groqTimeout = setTimeout(() => reject(new Error('TIMEOUT')), 5000);
+      });
+
+      try {
+        const result: any = await Promise.race([groqPromise, timeoutPromise]);
+        clearTimeout(groqTimeout!);
+        
+        if (result && result.category) {
+          setSuggestedCategory(result.category);
+          setSuggestionMessage(result.reasoning || `Acreditamos que se trata de ${result.category}.`);
+        }
+      } catch (err: any) {
+        clearTimeout(groqTimeout!);
+        // Fallback: mostra chips manuais
+        setSuggestedCategory(null);
+      } finally {
+        setIsClassifying(false);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [description]);
+
   const takePicture = async () => {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
@@ -118,6 +165,25 @@ export default function ReportModal() {
     }
   };
 
+  const searchAddress = async () => {
+    const query = searchQuery.trim();
+    if (!query) return;
+    setIsSearching(true);
+    try {
+      const results = await Location.geocodeAsync(query);
+      if (results && results.length > 0) {
+        const { latitude, longitude } = results[0];
+        setSelectedLocation({ latitude, longitude });
+      } else {
+        RNAlert.alert('Endereço não encontrado', 'Tente um endereço mais completo, como "Rua X, número, cidade".');
+      }
+    } catch (e) {
+      RNAlert.alert('Erro', 'Não foi possível buscar o endereço.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const submitAlert = async () => {
     if (!photoUri) {
       RNAlert.alert('Aviso', 'Anexar uma evidência fotográfica é recomendável para este alerta.', [
@@ -129,7 +195,7 @@ export default function ReportModal() {
     proceedSubmit();
   };
 
-  const proceedSubmit = async () => {
+  const proceedSubmit = async (ignorePhoto = false) => {
     if (!description.trim()) {
       RNAlert.alert('Erro', 'Por favor, adicione uma breve descrição.');
       return;
@@ -140,14 +206,34 @@ export default function ReportModal() {
     }
 
     setIsSubmitting(true);
-    try {
-      let finalPhotoUrl = null;
-      if (photoUri) {
-        finalPhotoUrl = await storageService.uploadAlertPhoto(photoUri);
-      }
+    let finalPhotoUrl = null;
 
+    if (photoUri && !ignorePhoto) {
+      try {
+        const uploadPromise = storageService.uploadAlertPhoto(photoUri);
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('TIMEOUT')), 30000);
+        });
+        
+        finalPhotoUrl = await Promise.race([uploadPromise, timeoutPromise]);
+      } catch (err: any) {
+        setIsSubmitting(false);
+        RNAlert.alert(
+          'Erro no envio',
+          'Não foi possível enviar a foto. Tente novamente ou reporte sem imagem.',
+          [
+            { text: 'Tentar novamente', onPress: () => proceedSubmit(false) },
+            { text: 'Enviar sem foto', onPress: () => proceedSubmit(true) },
+            { text: 'Cancelar', style: 'cancel' }
+          ]
+        );
+        return;
+      }
+    }
+
+    try {
       const { error } = await supabase.from('alerts').insert({
-        category,
+        category: selectedCategory ?? category,
         description,
         photo_url: finalPhotoUrl,
         location: `POINT(${selectedLocation.longitude} ${selectedLocation.latitude})`,
@@ -220,10 +306,34 @@ export default function ReportModal() {
     return (
       <View style={styles.container}>
         <View style={styles.mapPickerHeader}>
-          <Text variant="h3">Escolha o Local</Text>
-          <TouchableOpacity onPress={() => setShowMapPicker(false)} style={styles.closeCameraButton}>
-            <X color="#FFF" size={24} />
-          </TouchableOpacity>
+          <View style={styles.mapPickerTitleRow}>
+            <Text variant="h3">Escolha o Local</Text>
+            <TouchableOpacity onPress={() => setShowMapPicker(false)} style={styles.closeCameraButton}>
+              <X color="#FFF" size={24} />
+            </TouchableOpacity>
+          </View>
+          {/* Campo de busca de endereço */}
+          <View style={styles.mapSearchRow}>
+            <TextInput
+              style={styles.mapSearchInput}
+              placeholder="Buscar endereço..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={searchAddress}
+              returnKeyType="search"
+              autoCorrect={false}
+            />
+            <TouchableOpacity
+              style={styles.mapSearchButton}
+              onPress={searchAddress}
+              disabled={isSearching}
+            >
+              {isSearching
+                ? <ActivityIndicator size="small" color="#000" />
+                : <Search color="#000" size={20} />}
+            </TouchableOpacity>
+          </View>
         </View>
         <AgoraMap 
           style={{ flex: 1 }}
@@ -278,23 +388,80 @@ export default function ReportModal() {
           <Text variant="h3" style={{ marginLeft: 16 }}>Registrar novo alerta</Text>
         </View>
 
-        {/* Category Selection */}
-        <Text style={styles.sectionLabel}>TIPO DE OCORRÊNCIA</Text>
-        <View style={styles.cardsContainer}>
-          {CATEGORIES.map(cat => (
-            <TouchableOpacity
-              key={cat.id}
-              style={[
-                styles.card,
-                category === cat.id && styles.cardActive
-              ]}
-              onPress={() => setCategory(cat.id)}
-            >
-              <Text style={styles.cardEmoji}>{cat.icon}</Text>
-              <Text style={styles.cardText}>{cat.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Description (Smart Input) */}
+        <Text style={styles.sectionLabel}>DESCREVA O QUE VOCÊ VIU</Text>
+        <TextInput
+          style={styles.textArea}
+          placeholder="Ex: Vi um homem tentando arrombar um carro na Rua 12..."
+          placeholderTextColor={colors.textSecondary}
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          numberOfLines={4}
+          maxLength={200}
+        />
+
+        {/* Indicador de classificação */}
+        {isClassifying && (
+          <View style={styles.classifyingBadge}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.classifyingText}>A IA está identificando a categoria...</Text>
+          </View>
+        )}
+        
+        {/* Sugestão da IA */}
+        {suggestedCategory && !isClassifying && (
+          <View style={styles.suggestionCard}>
+            <Text style={styles.suggestionLabel}>✨ Sugestão do Ágora (Grok IA)</Text>
+            <Text style={styles.suggestionText}>{suggestionMessage}</Text>
+            <View style={styles.suggestionActions}>
+              <TouchableOpacity
+                style={[styles.confirmBtn, selectedCategory === suggestedCategory && styles.confirmBtnActive]}
+                onPress={() => {
+                  setSelectedCategory(suggestedCategory);
+                  setCategory(suggestedCategory);
+                }}
+              >
+                <Text style={{ color: selectedCategory === suggestedCategory ? '#fff' : colors.primary, fontWeight: 'bold' }}>
+                  {selectedCategory === suggestedCategory ? '✓ Confirmado' : 'Confirmar'}
+                </Text>
+              </TouchableOpacity>
+              {selectedCategory === suggestedCategory && (
+                <TouchableOpacity
+                  style={styles.changeBtn}
+                  onPress={() => setSelectedCategory(null)}
+                >
+                  <Text style={{ color: colors.textSecondary }}>Alterar</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Category Selection (Manual Fallback) */}
+        {(!suggestedCategory || selectedCategory === null) && (
+          <>
+            <Text style={styles.sectionLabel}>OU ESCOLHA A OCORRÊNCIA</Text>
+            <View style={styles.cardsContainer}>
+              {CATEGORIES.map(cat => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[
+                    styles.card,
+                    category === cat.id && styles.cardActive
+                  ]}
+                  onPress={() => {
+                    setCategory(cat.id);
+                    setSelectedCategory(cat.id);
+                  }}
+                >
+                  <Text style={styles.cardEmoji}>{cat.icon}</Text>
+                  <Text style={styles.cardText}>{cat.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
 
         {/* Info Box */}
         {category === 'iluminacao' && (
@@ -321,19 +488,6 @@ export default function ReportModal() {
             </TouchableOpacity>
           )}
         </View>
-
-        {/* Description */}
-        <Text style={styles.sectionLabel}>DESCRIÇÃO</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Descreva o trecho sem iluminação, postes apagados, área afetada..."
-          placeholderTextColor={colors.textSecondary}
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          numberOfLines={4}
-          maxLength={200}
-        />
 
         {/* Evidence */}
         <Text style={styles.sectionLabel}>ANEXAR EVIDÊNCIA</Text>
@@ -489,18 +643,70 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     padding: spacing.sm,
   },
-  input: {
-    backgroundColor: colors.surface,
-    color: colors.textPrimary,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+  textArea: {
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 12,
     padding: spacing.md,
+    fontSize: 16,
+    color: colors.textPrimary,
     minHeight: 100,
     textAlignVertical: 'top',
-    marginBottom: spacing.xl,
-    fontFamily: 'Inter_400Regular',
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+  },
+  classifyingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceElevated,
+    padding: spacing.sm,
+    borderRadius: 8,
+    marginBottom: spacing.md,
+    alignSelf: 'flex-start',
+  },
+  classifyingText: {
+    marginLeft: spacing.sm,
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+  suggestionCard: {
+    backgroundColor: 'rgba(0, 200, 83, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 200, 83, 0.3)',
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  suggestionLabel: {
+    color: colors.primary,
+    fontWeight: 'bold',
+    marginBottom: 4,
     fontSize: 14,
+  },
+  suggestionText: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    marginBottom: 12,
+  },
+  suggestionActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
+  confirmBtn: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  confirmBtnActive: {
+    backgroundColor: colors.primary,
+  },
+  changeBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   evidenceRow: {
     flexDirection: 'row',
@@ -534,11 +740,11 @@ const styles = StyleSheet.create({
   },
   removeEvidenceButton: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: 8,
+    right: 8,
     backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 12,
-    padding: 4,
+    borderRadius: 16,
+    padding: 6,
   },
   evidencePlaceholder: {
     width: 80,
@@ -616,12 +822,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mapPickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: spacing.lg,
     paddingTop: spacing.xl + 10,
     backgroundColor: colors.surface,
+    gap: spacing.sm,
+  },
+  mapPickerTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  mapSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2A2A2A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    overflow: 'hidden',
+  },
+  mapSearchInput: {
+    flex: 1,
+    color: colors.textPrimary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    fontSize: 14,
+  },
+  mapSearchButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   mapPickerFooter: {
     padding: spacing.lg,

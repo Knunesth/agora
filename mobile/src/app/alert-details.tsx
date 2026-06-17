@@ -5,10 +5,11 @@
 
 import React, { useState } from 'react';
 import {
-  View, StyleSheet, ScrollView, TouchableOpacity, Alert as RNAlert,
+  View, StyleSheet, ScrollView, TouchableOpacity, Alert as RNAlert, Image, ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as Location from 'expo-location';
 import { ChevronLeft, AlertTriangle, MapPin, Clock, Flame, Users } from 'lucide-react-native';
 import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
@@ -20,16 +21,34 @@ import { supabase } from '@/services/supabase';
 
 export default function AlertDetailsScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, alert: alertParam } = useLocalSearchParams<{ id?: string, alert?: string }>();
   const { user } = useAuth();
   const { location } = useLocation();
-  const { alerts } = useAlerts(location);
+  const { alerts, loading } = useAlerts(location);
   const [isVoting, setIsVoting] = useState(false);
+  const [address, setAddress] = useState<string | null>(null);
 
-  // Busca o alerta pelo id, ou usa o primeiro como fallback para navegação direta
-  const alert = alerts.find(a => a.id === id) ?? alerts[0];
+  // Tenta carregar o alerta que foi passado pela navegação para ser instantâneo
+  let passedAlert = null;
+  if (alertParam) {
+    try { passedAlert = JSON.parse(alertParam); } catch (e) {}
+  }
+
+  // Busca o alerta pelo id ou usa o passado via param, ou fallback
+  const alert = passedAlert || alerts.find(a => a.id === id) || alerts[0];
 
   if (!alert) {
+    if (loading) {
+      return (
+        <SafeAreaView style={styles.container} edges={['top']}>
+          <View style={styles.emptyContainer}>
+            <ActivityIndicator color={colors.primary} size="large" />
+            <Text variant="body" color={colors.textMuted} style={{ marginTop: spacing.md }}>Carregando detalhes...</Text>
+          </View>
+        </SafeAreaView>
+      );
+    }
+
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.emptyContainer}>
@@ -41,8 +60,21 @@ export default function AlertDetailsScreen() {
   }
 
   const isVerified = alert.status === 'verified';
+  const isOwnAlert = user?.id === alert.userId;
   const consensusPercent = Math.min(Math.round((alert.confirmations / 3) * 100), 100);
   const minutesAgo = Math.round((Date.now() - new Date(alert.createdAt).getTime()) / 60000);
+
+  // Busca endereço legível
+  React.useEffect(() => {
+    if (!alert) return;
+    Location.reverseGeocodeAsync(alert.coordinate)
+      .then(([r]) => {
+        if (!r) return;
+        const parts = [r.street, r.streetNumber, r.district, r.city].filter(Boolean);
+        setAddress(parts.join(', ') || null);
+      })
+      .catch(() => setAddress(null));
+  }, [alert?.id]);
 
   const statusConfig: Record<string, { label: string; color: string }> = {
     pending:  { label: 'Em análise', color: colors.warning },
@@ -111,7 +143,7 @@ export default function AlertDetailsScreen() {
             <View style={styles.metaItem}>
               <MapPin color={colors.textMuted} size={16} />
               <Text variant="caption" color={colors.textSecondary} style={styles.metaText}>
-                {alert.coordinate.latitude.toFixed(4)}, {alert.coordinate.longitude.toFixed(4)}
+                {address ?? `${alert.coordinate.latitude.toFixed(4)}, ${alert.coordinate.longitude.toFixed(4)}`}
               </Text>
             </View>
             <View style={styles.metaItem}>
@@ -152,10 +184,30 @@ export default function AlertDetailsScreen() {
             <Text variant="body" color={colors.textSecondary} style={{ lineHeight: 22 }}>
               {alert.description || 'Sem descrição adicional.'}
             </Text>
+            
+            {alert.userName && (
+              <Text variant="caption" color={colors.primary} style={{ marginTop: spacing.sm, fontWeight: 'bold' }}>
+                Relatado por: {alert.userName}
+              </Text>
+            )}
+            
+            {/* Foto da evidência */}
+            {alert.photoUrl && (
+              <View style={{ marginTop: spacing.md }}>
+                <Text variant="overline" color={colors.textMuted} style={{ marginBottom: spacing.sm }}>
+                  EVIDÊNCIA FOTOGRÁFICA
+                </Text>
+                <Image 
+                  source={{ uri: alert.photoUrl }} 
+                  style={styles.evidenceImage} 
+                  resizeMode="cover"
+                />
+              </View>
+            )}
           </View>
 
           {/* Votação */}
-          {!isVerified && (
+          {!isVerified && !isOwnAlert && (
             <View style={styles.voteSection}>
               <Text variant="bodySmall" style={styles.voteQuestion}>
                 Esta ocorrência ainda está lá?
@@ -176,6 +228,14 @@ export default function AlertDetailsScreen() {
                   <Text style={styles.voteRejectText}>✗ Não está mais</Text>
                 </TouchableOpacity>
               </View>
+            </View>
+          )}
+
+          {!isVerified && isOwnAlert && (
+            <View style={[styles.voteSection, { alignItems: 'center', paddingVertical: spacing.xl }]}>
+              <Text variant="bodySmall" color={colors.primary} style={{ textAlign: 'center' }}>
+                Este é o seu reporte. Aguarde os votos da comunidade para alcançar o consenso.
+              </Text>
             </View>
           )}
         </View>
@@ -241,6 +301,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated, borderRadius: borderRadius.lg,
     padding: spacing.lg, marginBottom: spacing.xl,
     borderWidth: 1, borderColor: colors.surfaceBorder,
+  },
+  evidenceImage: {
+    width: '100%', height: 200, borderRadius: borderRadius.md,
+    marginTop: spacing.xs,
   },
 
   voteSection: {

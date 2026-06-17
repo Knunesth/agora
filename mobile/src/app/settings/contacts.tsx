@@ -67,31 +67,11 @@ export default function ContactsScreen() {
   };
 
   const handleGenerateLink = async () => {
-    setLoadingInvite(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-invite');
-      
-      if (error || !data || data.error) {
-        throw new Error(data?.error || 'Erro ao gerar o link');
-      }
-
-      const inviteMessage = `Ei! Te convido para ser meu contato de segurança no Ágora. Se eu precisar de ajuda, você será notificado. Baixe o app e aceite meu convite: ${data.link}`;
-
-      if (Platform.OS === 'web') {
-        // Na web, copiar para a área de transferência é mais seguro que o Share API
-        await Clipboard.setStringAsync(inviteMessage);
-        Alert.alert('Link copiado!', 'O convite foi copiado. Agora é só colar no WhatsApp da pessoa!');
-      } else {
-        await Share.share({
-          message: inviteMessage,
-        });
-      }
-      setModalVisible(false);
-    } catch (err: any) {
-      Alert.alert('Erro', err.message);
-    } finally {
-      setLoadingInvite(false);
-    }
+    Alert.alert(
+      'Em breve', 
+      'Esta funcionalidade estará disponível na próxima versão do Ágora.',
+      [{ text: 'OK' }]
+    );
   };
 
   const handleAddByEmail = async () => {

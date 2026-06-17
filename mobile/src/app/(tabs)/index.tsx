@@ -4,13 +4,13 @@
  * Nome do usuário vem dinamicamente do Supabase Auth.
  */
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, Text as RNText,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import {
   Menu, Bell, AlertTriangle, Map, Flag,
   Building2, ChevronRight, Car, UserCircle,
@@ -22,7 +22,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useLocation } from '@/hooks/useLocation';
 import { GaugeChart, type RiskLevel } from '@/components/ui/GaugeChart';
+import { RiskDetailsSheet, getRiskLevel } from '@/components/ui/RiskDetailsSheet';
 import type { Alert } from '@/types';
+import BottomSheet from '@gorhom/bottom-sheet';
 import { useMenu } from '@/contexts/MenuContext';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -84,15 +86,23 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { location } = useLocation();
-  const { alerts, loading } = useAlerts(location);
+  const { alerts, loading, refetch } = useAlerts(location);
   const { openMenu } = useMenu();
+  const riskSheetRef = React.useRef<BottomSheet>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const firstName = (user?.user_metadata?.display_name as string | undefined)
     ?.split(' ')[0] ?? 'Cidadão';
 
   const activeAlert = alerts.find(a => a.status === 'pending' || a.status === 'verified') ?? null;
   const totalAlerts = alerts.length;
-  const overallRisk: RiskLevel = totalAlerts >= 5 ? 'high' : totalAlerts >= 2 ? 'medium' : 'low';
+  
+  const overallRisk: RiskLevel = getRiskLevel(alerts);
   const riskLabel = overallRisk === 'high' ? 'ALTO RISCO' : overallRisk === 'medium' ? 'MÉDIO RISCO' : 'BAIXO RISCO';
   const riskColor = overallRisk === 'high' ? '#FF1744' : overallRisk === 'medium' ? '#FFD600' : '#00E676';
   const riskBg    = overallRisk === 'high' ? 'rgba(255,23,68,0.18)' : overallRisk === 'medium' ? 'rgba(255,214,0,0.15)' : 'rgba(0,230,118,0.12)';
@@ -137,10 +147,12 @@ export default function HomeScreen() {
           >
             <Menu color={colors.textPrimary} size={22} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.bellButton} accessibilityLabel="Notificações">
+          <TouchableOpacity 
+            style={styles.bellButton} 
+            accessibilityLabel="Notificações"
+            onPress={() => router.push('/notifications-feed')}
+          >
             <Bell color={colors.textPrimary} size={22} />
-            {/* Ponto de notificação */}
-            <View style={styles.notifDot} />
           </TouchableOpacity>
         </View>
 
@@ -158,7 +170,7 @@ export default function HomeScreen() {
         ) : activeAlert ? (
           <TouchableOpacity
             style={styles.activeAlertCard}
-            onPress={() => router.push('/alert-details' as any)}
+            onPress={() => router.push({ pathname: '/alert-details', params: { alert: JSON.stringify(activeAlert) } })}
             accessibilityLabel="Ver alerta ativo"
           >
             <View style={styles.activeAlertTop}>
@@ -177,7 +189,11 @@ export default function HomeScreen() {
         ) : null}
 
         {/* ── Card Nível de Risco (Gauge) ─────────────────────────────────── */}
-        <View style={styles.riskCard}>
+        <TouchableOpacity 
+          style={styles.riskCard} 
+          onPress={() => riskSheetRef.current?.expand()}
+          activeOpacity={0.8}
+        >
           <RNText style={styles.riskCardLabel}>Nível de risco na sua região</RNText>
           <View style={styles.gaugeRow}>
             <GaugeChart level={overallRisk} size={180} />
@@ -187,7 +203,7 @@ export default function HomeScreen() {
               {'● ' + riskLabel}
             </RNText>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* ── Grid de Ações Rápidas ───────────────────────────────────────── */}
         <View style={styles.grid}>
@@ -233,7 +249,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               key={alert.id}
               style={styles.incidentRow}
-              onPress={() => router.push('/alert-details' as any)}
+              onPress={() => router.push({ pathname: '/alert-details', params: { alert: JSON.stringify(alert) } })}
               accessibilityLabel={categoryLabel(alert.category)}
             >
               {/* Ícone */}
@@ -264,8 +280,15 @@ export default function HomeScreen() {
         })}
 
         {/* Espaçamento extra no final para a CustomTabBar não cobrir o último item */}
-        <View style={{ height: 120 }} />
+        <View style={{ height: spacing.xxl }} />
       </ScrollView>
+
+      {/* ── Sheets ──────────────────────────────────────────────────────── */}
+      <RiskDetailsSheet 
+        ref={riskSheetRef} 
+        alerts={alerts} 
+        onClose={() => riskSheetRef.current?.close()} 
+      />
     </SafeAreaView>
   );
 }
@@ -370,11 +393,13 @@ const styles = StyleSheet.create({
 
   // Quick Actions Grid
   grid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm,
+    flexDirection: 'row', flexWrap: 'wrap', 
+    justifyContent: 'space-between',
+    rowGap: spacing.sm,
     marginBottom: spacing.lg,
   },
   gridCard: {
-    width: '47%', borderRadius: 16,
+    width: '48.5%', borderRadius: 16,
     padding: spacing.md, gap: spacing.sm,
     borderWidth: 1, borderColor: '#2A2A2A',
     minHeight: 100,

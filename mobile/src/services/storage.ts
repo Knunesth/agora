@@ -4,6 +4,7 @@
  */
 
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from './supabase';
 
 // Nome do bucket que você criou no painel do Supabase
@@ -24,19 +25,34 @@ export const storageService = {
         { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
       );
 
-      // 2. Extrai o nome do arquivo e a extensão
+      // 2. Extrai o nome do arquivo
       const fileName = localUri.split('/').pop() || `alert_evidence_${Date.now()}.jpg`;
-      const filePath = `${Date.now()}_${fileName}`; // Evita colisão de nomes
+      
+      // 3. Busca o user_id para montar o path conforme exigido pela RLS do bucket:
+      //    policy: auth.uid()::text = (storage.foldername(name))[1]
+      //    ou seja, o path DEVE começar com o user_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado.');
+      const filePath = `${user.id}/${Date.now()}_${fileName}`;
 
-      // 3. Converte a URI local num Blob para ser aceita pelo Supabase/Fetch API
-      const response = await fetch(manipResult.uri);
-      if (!response.ok) throw new Error('Falha ao processar arquivo local.');
-      const blob = await response.blob();
+      // 3. Lê o arquivo local como base64 via FileSystem
+      //    IMPORTANTE: fetch() com URI file:// falha no Android/iOS nativo com "Network request failed"
+      //    FileSystem.readAsStringAsync é a forma correta de ler arquivos locais no React Native
+      const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
-      // 4. Upload para o Supabase Storage
+      // 4. Converte base64 → ArrayBuffer (formato aceito pelo Supabase Storage)
+      const binaryString = atob(base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      // 5. Upload para o Supabase Storage
       const { data, error } = await supabase.storage
         .from(BUCKET_NAME)
-        .upload(filePath, blob, {
+        .upload(filePath, bytes.buffer, {
           contentType: 'image/jpeg',
         });
 
@@ -44,7 +60,7 @@ export const storageService = {
         throw new Error(error.message);
       }
 
-      // 5. Obter a URL Pública do arquivo recém upado
+      // 6. Obter a URL Pública do arquivo recém upado
       const { data: publicUrlData } = supabase.storage
         .from(BUCKET_NAME)
         .getPublicUrl(data.path);

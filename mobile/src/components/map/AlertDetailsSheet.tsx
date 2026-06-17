@@ -5,10 +5,11 @@
  * para alertas em quarentena. Impede auto-voto se user_id for o autor.
  */
 
-import { forwardRef, useMemo } from 'react';
+import { forwardRef, useMemo, useEffect, useState } from 'react';
 import { View, StyleSheet, Image, ActivityIndicator } from 'react-native';
-import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
-import { ThumbsUp, ThumbsDown, ShieldAlert, CheckCircle, Clock } from 'lucide-react-native';
+import BottomSheet, { BottomSheetView, BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { ThumbsUp, ThumbsDown, ShieldAlert, CheckCircle, Clock, MapPin } from 'lucide-react-native';
+import * as Location from 'expo-location';
 
 import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
@@ -26,8 +27,20 @@ interface AlertDetailsSheetProps {
 export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>(
   ({ alert, onVote, isVoting, onClose }, ref) => {
     const { user } = useAuth();
+    const [address, setAddress] = useState<string | null>(null);
     
-    // Configuração de tamanhos que a gaveta pode abrir
+    // Busca endereço legível por geocodificação reversa
+    useEffect(() => {
+      if (!alert) { setAddress(null); return; }
+      Location.reverseGeocodeAsync(alert.coordinate)
+        .then(([r]) => {
+          if (!r) return;
+          const parts = [r.street, r.streetNumber, r.district, r.city].filter(Boolean);
+          setAddress(parts.join(', ') || null);
+        })
+        .catch(() => setAddress(null));
+    }, [alert?.id]);
+    
     const snapPoints = useMemo(() => ['50%', '85%'], []);
 
     // Proteção de UX da Regra de Negócio: não mostrar botões se o alerta for da própria pessoa
@@ -40,7 +53,7 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
     return (
       <BottomSheet
         ref={ref}
-        index={-1} // Inicia fechado
+        index={-1}
         snapPoints={snapPoints}
         enablePanDownToClose
         onClose={onClose}
@@ -50,7 +63,7 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
           <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />
         )}
       >
-        <BottomSheetView style={styles.contentContainer}>
+        <BottomSheetScrollView contentContainerStyle={styles.contentContainer}>
           
           {/* Header Visual */}
           <View style={styles.headerRow}>
@@ -78,6 +91,15 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
           <Text variant="body" color={colors.textSecondary} style={styles.description}>
             {alert.description}
           </Text>
+
+          {/* Localidade */}
+          <View style={styles.locationRow}>
+            <MapPin size={14} color={colors.primary} />
+            <Text variant="bodySmall" color={colors.textSecondary} style={{ flex: 1, marginLeft: 6 }}>
+              {address ??
+                `${alert.coordinate.latitude.toFixed(5)}, ${alert.coordinate.longitude.toFixed(5)}`}
+            </Text>
+          </View>
 
           {/* Foto (Evidência) */}
           {alert.photoUrl ? (
@@ -129,7 +151,7 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
             )}
           </View>
 
-        </BottomSheetView>
+        </BottomSheetScrollView>
       </BottomSheet>
     );
   }
@@ -162,7 +184,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   description: {
+    marginBottom: spacing.sm,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 10,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 8,
     marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
   },
   evidenceImage: {
     width: '100%',

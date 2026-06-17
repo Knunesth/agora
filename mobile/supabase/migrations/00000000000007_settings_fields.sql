@@ -11,7 +11,10 @@ ALTER TABLE public.user_profiles
   ADD COLUMN IF NOT EXISTS phone text,
   ADD COLUMN IF NOT EXISTS cpf_number text,
   ADD COLUMN IF NOT EXISTS birth_date date,
-  ADD COLUMN IF NOT EXISTS neighborhood text;
+  ADD COLUMN IF NOT EXISTS neighborhood text,
+  ADD COLUMN IF NOT EXISTS share_realtime_location boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS store_location_history boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS share_data_with_partners boolean DEFAULT false;
 
 -- 2. Atualizar o Trigger para preencher o display_name
 CREATE OR REPLACE FUNCTION public.handle_new_user()

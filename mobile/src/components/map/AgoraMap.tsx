@@ -4,7 +4,7 @@
 // Usa OSM por padrão; troca para Google Maps se a API key estiver no .env
 // ─────────────────────────────────────────────────────────────
 
-import React from 'react';
+import React, { forwardRef } from 'react';
 import MapView, { UrlTile, MapViewProps } from 'react-native-maps';
 import { StyleSheet } from 'react-native';
 
@@ -19,35 +19,39 @@ type AgoraMapProps = MapViewProps & {
   children?: React.ReactNode;
 };
 
-export function AgoraMap({ children, style, ...props }: AgoraMapProps) {
-  return (
-    <MapView
-      style={[styles.map, style]}
-      provider={MAP_PROVIDER}
-      // Estilo dark — Google Maps usa customMapStyle, OSM usa UrlTile abaixo
-      customMapStyle={IS_GOOGLE_MAPS ? GOOGLE_DARK_STYLE : undefined}
-      // Configurações padrão
-      showsUserLocation
-      showsMyLocationButton={false}
-      showsCompass={false}
-      showsBuildings={false}
-      showsIndoors={false}
-      {...props}
-    >
-      {/* Tiles escuros do OSM — só renderiza quando Google Maps não está ativo */}
-      {!IS_GOOGLE_MAPS && (
-        <UrlTile
-          urlTemplate={OSM_DARK_TILE_URL}
-          maximumZ={19}
-          flipY={false}
-          zIndex={-1}
-        />
-      )}
+export const AgoraMap = forwardRef<MapView, AgoraMapProps>(
+  ({ children, style, ...props }, ref) => {
+    return (
+      <MapView
+        ref={ref}
+        style={[styles.map, style]}
+        provider={MAP_PROVIDER}
+        customMapStyle={IS_GOOGLE_MAPS ? GOOGLE_DARK_STYLE : undefined}
+        // Desabilitado: usamos nosso próprio marcador customizado abaixo
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        showsCompass={false}
+        showsBuildings={false}
+        showsIndoors={false}
+        {...props}
+      >
+        {/* Tiles escuros do OSM — só renderiza quando Google Maps não está ativo */}
+        {!IS_GOOGLE_MAPS && (
+          <UrlTile
+            urlTemplate={OSM_DARK_TILE_URL}
+            maximumZ={19}
+            flipY={false}
+            zIndex={-1}
+          />
+        )}
 
-      {children}
-    </MapView>
-  );
-}
+        {children}
+      </MapView>
+    );
+  }
+);
+
+AgoraMap.displayName = 'AgoraMap';
 
 const styles = StyleSheet.create({
   map: {

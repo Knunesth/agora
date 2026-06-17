@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
@@ -34,16 +34,11 @@ export default function NotificationsScreen() {
   };
 
   const savePreferences = async (newPrefs: any) => {
-    if (!user) return;
-    await supabase.from('user_profiles').update({
-      notification_preferences: {
-        alerts_nearby: alertsNearby,
-        confirmations: confirmations,
-        sos_network: sosNetwork,
-        agora_news: news,
-        ...newPrefs
-      }
-    }).eq('id', user.id);
+    Alert.alert(
+      'Em breve', 
+      'Esta funcionalidade estará disponível na próxima versão do Ágora.',
+      [{ text: 'OK' }]
+    );
   };
 
   return (

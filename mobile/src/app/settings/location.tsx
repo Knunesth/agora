@@ -1,24 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Linking, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Linking, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, MapPin } from 'lucide-react-native';
+import { ChevronLeft, MapPin, Navigation, Crosshair } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { spacing, borderRadius } from '@/theme/spacing';
 
 export default function LocationScreen() {
   const router = useRouter();
-  const [status, setStatus] = useState<Location.PermissionStatus | 'undetermined'>('undetermined');
+  const [foregroundStatus, setForegroundStatus] = useState<Location.PermissionStatus | 'undetermined'>('undetermined');
+  const [backgroundStatus, setBackgroundStatus] = useState<Location.PermissionStatus | 'undetermined'>('undetermined');
 
   useEffect(() => {
-    checkPermission();
+    checkPermissions();
   }, []);
 
-  const checkPermission = async () => {
-    const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
-    setStatus(currentStatus);
+  const checkPermissions = async () => {
+    const { status: currentForeground } = await Location.getForegroundPermissionsAsync();
+    setForegroundStatus(currentForeground);
+
+    if (Platform.OS !== 'web') {
+      const { status: currentBackground } = await Location.getBackgroundPermissionsAsync();
+      setBackgroundStatus(currentBackground);
+    }
   };
 
   const handleOpenSettings = () => {
@@ -29,7 +35,8 @@ export default function LocationScreen() {
     Linking.openSettings();
   };
 
-  const isGranted = status === 'granted';
+  const isForegroundGranted = foregroundStatus === 'granted';
+  const isBackgroundGranted = backgroundStatus === 'granted';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,32 +48,53 @@ export default function LocationScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.statusCard}>
-          <View style={[styles.iconBox, { backgroundColor: isGranted ? 'rgba(0,200,83,0.1)' : 'rgba(255,23,68,0.1)' }]}>
-            <MapPin color={isGranted ? '#00C853' : '#FF1744'} size={24} />
+      <ScrollView contentContainerStyle={styles.content}>
+        
+        <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>PERMISSÕES DO SISTEMA</Text>
+        
+        <View style={styles.card}>
+          <View style={styles.statusRow}>
+            <View style={[styles.iconBox, { backgroundColor: isForegroundGranted ? 'rgba(0,200,83,0.1)' : 'rgba(255,23,68,0.1)' }]}>
+              <MapPin color={isForegroundGranted ? '#00C853' : '#FF1744'} size={24} />
+            </View>
+            <View style={styles.statusTexts}>
+              <Text variant="body" style={{ fontWeight: '600' }}>Durante o uso (GPS)</Text>
+              <Text variant="bodySmall" color={isForegroundGranted ? '#00C853' : '#FF1744'}>
+                {isForegroundGranted ? 'Ativada' : 'Desativada'}
+              </Text>
+            </View>
           </View>
-          <View style={styles.statusTexts}>
-            <Text variant="body" style={{ fontWeight: '600' }}>Permissão de GPS</Text>
-            <Text variant="bodySmall" color={isGranted ? '#00C853' : '#FF1744'}>
-              {isGranted ? 'Ativada' : 'Desativada'}
-            </Text>
+          
+          <View style={styles.divider} />
+          
+          <View style={styles.statusRow}>
+            <View style={[styles.iconBox, { backgroundColor: isBackgroundGranted ? 'rgba(0,200,83,0.1)' : 'rgba(255,23,68,0.1)' }]}>
+              <Navigation color={isBackgroundGranted ? '#00C853' : '#FF1744'} size={24} />
+            </View>
+            <View style={styles.statusTexts}>
+              <Text variant="body" style={{ fontWeight: '600' }}>Segundo Plano (SOS)</Text>
+              <Text variant="bodySmall" color={isBackgroundGranted ? '#00C853' : '#FF1744'}>
+                {isBackgroundGranted ? 'Ativada' : 'Desativada'}
+              </Text>
+            </View>
           </View>
         </View>
 
         <View style={styles.infoBox}>
-          <Text variant="bodySmall" color={colors.textSecondary} style={{ textAlign: 'center' }}>
-            Sua localização é usada apenas para exibir alertas próximos e nunca é compartilhada sem sua autorização.
+          <Text variant="bodySmall" color={colors.textSecondary} style={{ textAlign: 'center', lineHeight: 20 }}>
+            Para que seus contatos de segurança acompanhem você em tempo real caso acione o SOS mesmo com o celular no bolso, ative a permissão "O Tempo Todo" nas configurações.
           </Text>
         </View>
 
-        <Button 
-          title="ABRIR CONFIGURAÇÕES DO CELULAR" 
-          variant="secondary" 
-          onPress={handleOpenSettings} 
-          style={{ marginTop: spacing.xl }}
-        />
-      </View>
+        <View style={{ marginTop: spacing.xxl }}>
+          <Button 
+            title="GERENCIAR NO CELULAR" 
+            variant="secondary" 
+            onPress={handleOpenSettings} 
+          />
+        </View>
+
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -81,11 +109,13 @@ const styles = StyleSheet.create({
   backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1A1A1A', justifyContent: 'center', alignItems: 'center' },
   headerTitle: { color: colors.textPrimary },
   content: { flex: 1, padding: spacing.lg },
-  statusCard: { 
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A1A', 
-    borderRadius: 16, padding: spacing.lg, borderWidth: 1, borderColor: colors.surfaceBorder 
+  sectionLabel: { marginTop: spacing.md, marginBottom: spacing.sm },
+  card: { backgroundColor: '#1A1A1A', borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.surfaceBorder, overflow: 'hidden' },
+  statusRow: { 
+    flexDirection: 'row', alignItems: 'center', padding: spacing.lg,
   },
+  divider: { height: 1, backgroundColor: colors.surfaceBorder, marginHorizontal: spacing.lg },
   iconBox: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  statusTexts: { marginLeft: spacing.md },
-  infoBox: { marginTop: spacing.lg, paddingHorizontal: spacing.md },
+  statusTexts: { marginLeft: spacing.md, flex: 1 },
+  infoBox: { marginTop: spacing.lg, paddingHorizontal: spacing.sm },
 });

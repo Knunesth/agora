@@ -18,16 +18,34 @@ export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+
+  // Formata automaticamente: 61999999999 → (61) 9 9999-9999
+  const formatPhone = (raw: string) => {
+    const digits = raw.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 2) return digits.replace(/(\d{1,2})/, '($1');
+    if (digits.length <= 7) return digits.replace(/(\d{2})(\d+)/, '($1) $2');
+    if (digits.length === 11)
+      return digits.replace(/(\d{2})(\d{1})(\d{4})(\d{4})/, '($1) $2 $3-$4');
+    return digits.replace(/(\d{2})(\d{4})(\d+)/, '($1) $2-$3');
+  };
+
+  const handlePhoneChange = (text: string) => {
+    setPhone(formatPhone(text));
+  };
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const isLoadingRef = useRef(false);
+  const lastCallRef = useRef<number>(0);
 
   const handleRegister = async (e?: any) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (isLoadingRef.current) return;
+    // Bloqueia chamadas repetidas em menos de 2 segundos (ex: duplo clique ou Enter na web)
+    const now = Date.now();
+    if (isLoadingRef.current || now - lastCallRef.current < 2000) return;
+    lastCallRef.current = now;
 
     if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Atenção', 'Preencha todos os campos obrigatórios.');
@@ -56,7 +74,15 @@ export default function RegisterScreen() {
       });
 
       if (error) {
-        Alert.alert('Erro no Cadastro', error.message);
+        // 429 = Supabase rate limit atingido (muitas tentativas de cadastro)
+        if (error.status === 429 || error.message?.toLowerCase().includes('rate limit') || error.message?.toLowerCase().includes('too many')) {
+          Alert.alert(
+            'Muitas tentativas',
+            'O servidor bloqueou temporariamente novos cadastros. Aguarde alguns minutos e tente novamente, ou use um email diferente (ex: seuemail+teste2@gmail.com).'
+          );
+        } else {
+          Alert.alert('Erro no Cadastro', error.message);
+        }
       } else {
         // Verificar se existe convite pendente e aceitar
         const pendingInvite = await AsyncStorage.getItem('pending_invite');
@@ -122,9 +148,9 @@ export default function RegisterScreen() {
             />
 
             <Input
-              placeholder="(00) 00000-0000"
+              placeholder="(61) 9 9999-9999"
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={handlePhoneChange}
               keyboardType="phone-pad"
               iconLeft={<Phone color={colors.textMuted} size={20} />}
             />

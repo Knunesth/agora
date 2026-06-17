@@ -1,16 +1,20 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert as RNAlert, Linking, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Plus, Menu, Triangle, Search, Mic, Home, Briefcase, Clock, MapPin, Navigation, Map as MapIcon, Bike, Car } from 'lucide-react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
+import { Plus, Menu, Triangle, Search, Mic, Home, Briefcase, Clock, MapPin, Navigation, Map as MapIcon, Bike, Car, Crosshair } from 'lucide-react-native';
+import MapView from 'react-native-maps';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
+import BottomSheet, { BottomSheetView, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Circle, Marker, Polyline } from '@/components/map/MapElements';
+import { GestureHandlerRootView, ScrollView as GHScrollView } from 'react-native-gesture-handler';
 
 import { Text } from '@/components/ui';
 import { AgoraMap } from '@/components/map/AgoraMap';
 import { AlertMarker } from '@/components/map/AlertMarker';
 import { AlertDetailsSheet } from '@/components/map/AlertDetailsSheet';
-import BottomSheet from '@gorhom/bottom-sheet';
 import { Alert } from '@/types';
 import { useLocation, DEFAULT_LOCATION } from '@/hooks/useLocation';
 import { useAlerts } from '@/hooks/useAlerts';
@@ -26,47 +30,121 @@ import { buildRiskZones, RiskZone } from '@/services/riskZones';
 import { getSafeRoutes, RouteInfo, TransportMode } from '@/services/routing';
 
 export default function MapScreen() {
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  const alertSheetRef = useRef<BottomSheet>(null);
+  const mapPanelRef = useRef<BottomSheet>(null);
+  const mapRef = useRef<MapView>(null);
+  const searchInputRef = useRef<TextInput>(null);
+  const hasCentered = useRef(false);
+  const MAP_PANEL_SNAP = ['30%', '60%'];
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [isVoting, setIsVoting] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   
   const { user } = useAuth();
   const { openMenu } = useMenu();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const { location, loading: locLoading, errorMsg: locError } = useLocation();
   const centerLocation = location || DEFAULT_LOCATION;
-  const { alerts, loading: alertsLoading, errorMsg: dbError } = useAlerts(location);
+  const { alerts, loading: alertsLoading, errorMsg: dbError, refetch } = useAlerts(location);
 
   // Estados de Rota
   const [riskZones, setRiskZones] = useState<RiskZone[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<GeocodedAddress[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  // Carrega histórico do AsyncStorage ao montar
+  useEffect(() => {
+    AsyncStorage.getItem('map_recent_searches').then((raw) => {
+      if (raw) setRecentSearches(JSON.parse(raw));
+    });
+  }, []);
   
+  const [activeFilter, setActiveFilter] = useState<string>('all');
+  
+  const filteredAlerts = useMemo(() => {
+    return activeFilter === 'all' 
+      ? alerts 
+      : alerts.filter(a => a.category === activeFilter);
+  }, [alerts, activeFilter]);
+
   const [destination, setDestination] = useState<GeocodedAddress | null>(null);
   const [transportMode, setTransportMode] = useState<TransportMode>('foot');
   const [routes, setRoutes] = useState<RouteInfo[]>([]);
   const [isRouting, setIsRouting] = useState(false);
 
-  // Bottom Sheet Customizado (Reanimated)
-  const isExpanded = useSharedValue(false);
-  const toggleSheet = () => {
-    isExpanded.value = !isExpanded.value;
+  // Removed old toggle — now handled by BottomSheet snap points
+
+  // Distância Haversine em km entre dois pontos
+  const haversine = (a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) => {
+    const R = 6371;
+    const dLat = ((b.latitude - a.latitude) * Math.PI) / 180;
+    const dLon = ((b.longitude - a.longitude) * Math.PI) / 180;
+    const s = Math.sin(dLat / 2) ** 2 +
+      Math.cos((a.latitude * Math.PI) / 180) *
+      Math.cos((b.latitude * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
   };
 
-  const expandedStyle = useAnimatedStyle(() => {
-    return {
-      height: withSpring(isExpanded.value ? 250 : 0, { damping: 20, stiffness: 100 }),
-      opacity: withSpring(isExpanded.value ? 1 : 0),
-    };
-  });
+  // Alerta crítico verificado mais próximo (raio 2 km)
+  const HIGH_RISK: string[] = ['furto', 'suspeito'];
+  const nearbyActiveAlert = location
+    ? filteredAlerts.find(
+        (a) =>
+          a.status === 'verified' &&
+          HIGH_RISK.includes(a.category) &&
+          haversine(location, a.coordinate) <= 2
+      ) ?? null
+    : null;
+  const hasNearbyActiveAlert = nearbyActiveAlert !== null;
+
+  const openActiveAlert = () => {
+    if (!nearbyActiveAlert) return;
+    setSelectedAlert(nearbyActiveAlert);
+    alertSheetRef.current?.expand();
+  };
+
+  // Refetch quando a tela volta ao foco (ex: após enviar um relatório)
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+
+  // Auto-centraliza na primeira vez que o GPS chega
+  useEffect(() => {
+    if (location && !hasCentered.current && mapRef.current) {
+      hasCentered.current = true;
+      mapRef.current.animateToRegion({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      }, 800);
+    }
+  }, [location]);
+
+  const centerOnUser = () => {
+    if (!location) {
+      RNAlert.alert('GPS indisponível', 'Ative o GPS para usar esta função.');
+      return;
+    }
+    mapRef.current?.animateToRegion({
+      latitude: location.latitude,
+      longitude: location.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    }, 800);
+  };
 
   // Atualizar Zonas de Risco
   useEffect(() => {
-    setRiskZones(buildRiskZones(alerts));
-  }, [alerts]);
+    setRiskZones(buildRiskZones(filteredAlerts));
+  }, [filteredAlerts]);
 
   // Atualizar Relógio
   useEffect(() => {
@@ -95,12 +173,53 @@ export default function MapScreen() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
-  // Quando escolhe um endereço
   const handleSelectDestination = (dest: GeocodedAddress) => {
     setSearchQuery(dest.name);
     setSuggestions([]);
-    if (isExpanded.value) toggleSheet();
+    // Fecha o sheet após selecionar
+    mapPanelRef.current?.snapToIndex(0);
+    // Salva no histórico (dedup + max 5)
+    setRecentSearches((prev) => {
+      const updated = [dest.name, ...prev.filter((s) => s !== dest.name)].slice(0, 5);
+      AsyncStorage.setItem('map_recent_searches', JSON.stringify(updated));
+      return updated;
+    });
+    
+    // Anima o mapa para a coordenada
+    mapRef.current?.animateToRegion({
+      latitude: dest.coordinate.latitude,
+      longitude: dest.coordinate.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    }, 800);
+    
     handleCalculateRoute(dest, transportMode);
+  };
+
+  const handleAddressPress = (type: 'home' | 'work') => {
+    const address = type === 'home' ? user?.user_metadata?.home_address : user?.user_metadata?.work_address;
+    const loc = type === 'home' ? user?.user_metadata?.home_location : user?.user_metadata?.work_location;
+    
+    if (address && loc) {
+      // Parse POINT(lon lat)
+      const match = loc.match(/POINT\(([-\d.]+) ([-\d.]+)\)/);
+      if (match) {
+        const lon = parseFloat(match[1]);
+        const lat = parseFloat(match[2]);
+        mapRef.current?.animateToRegion({
+          latitude: lat,
+          longitude: lon,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }, 800);
+      }
+    } else {
+      router.push({ pathname: '/address-modal', params: { type } });
+    }
+  };
+
+  const handleEditAddress = (type: 'home' | 'work') => {
+    router.push({ pathname: '/address-modal', params: { type } });
   };
 
   const handleCalculateRoute = async (dest: GeocodedAddress, mode: TransportMode) => {
@@ -140,14 +259,15 @@ export default function MapScreen() {
   const handleSOS = async () => { /* Mantido do original */ };
   const handleMarkerPress = (alert: Alert) => {
     setSelectedAlert(alert);
-    bottomSheetRef.current?.expand();
+    alertSheetRef.current?.expand();
   };
   const handleVote = async (vote_type: 'confirm' | 'reject') => { /* Mantido */ };
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <View style={StyleSheet.absoluteFillObject}>
         <AgoraMap
+          ref={mapRef}
           initialRegion={{
             latitude: centerLocation.latitude,
             longitude: centerLocation.longitude,
@@ -166,15 +286,26 @@ export default function MapScreen() {
             />
           )}
 
-          {/* Marcador de localização do usuário */}
-          <Marker coordinate={centerLocation} anchor={{ x: 0.5, y: 0.5 }}>
-            <View style={styles.userMarkerHalo}>
-              <View style={styles.userMarkerCore} />
-            </View>
-          </Marker>
+          {/* Marcador customizado do usuário — ponto azul estilo iOS */}
+          {location && (
+            <>
+              {/* Halo de precisão */}
+              <Circle
+                center={location}
+                radius={50}
+                fillColor="rgba(0, 122, 255, 0.15)"
+                strokeColor="rgba(0, 122, 255, 0.3)"
+                strokeWidth={1}
+              />
+              {/* Ponto azul */}
+              <Marker coordinate={location} anchor={{ x: 0.5, y: 0.5 }} flat={true}>
+                <View style={styles.userDot} />
+              </Marker>
+            </>
+          )}
 
           {/* Alertas padrão */}
-          {!routes.length && alerts.map((alert) => (
+          {!routes.length && filteredAlerts.map((alert) => (
             <AlertMarker key={alert.id} alert={alert} onPress={handleMarkerPress} />
           ))}
 
@@ -220,10 +351,21 @@ export default function MapScreen() {
           <Menu color="#FFF" size={24} />
         </TouchableOpacity>
         <Text style={styles.timeText}>{currentTime}</Text>
-        <TouchableOpacity style={styles.alertBtn}>
-          <Triangle color="#FFF" size={20} fill="#FFF" />
-        </TouchableOpacity>
+        {hasNearbyActiveAlert && (
+          <TouchableOpacity style={styles.alertBtn} onPress={openActiveAlert}>
+            <Triangle color="#FFF" size={20} fill="#FFF" />
+          </TouchableOpacity>
+        )}
       </View>
+
+      {/* Botão de centralizar na localização */}
+      <TouchableOpacity
+        style={[styles.centerBtn, { top: Math.max(insets.top, 20) + 56 }]}
+        onPress={centerOnUser}
+        activeOpacity={0.8}
+      >
+        <Crosshair size={22} color={location ? '#00C853' : '#555'} />
+      </TouchableOpacity>
 
       {/* Card de Resumo de Rota (Se houver rota ativa) */}
       {routes.length > 0 && (
@@ -251,119 +393,164 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* BOTTOM SHEET FIXO (Busca e Menu) */}
-      <View style={[styles.bottomSheet, { paddingBottom: Math.max(insets.bottom, 24) + 95 }]}>
-        
-        {!routes.length && (
-          <TouchableOpacity style={styles.dragHandleArea} onPress={toggleSheet} activeOpacity={0.7}>
-            <View style={styles.dragHandle} />
-          </TouchableOpacity>
-        )}
-
-        {/* Linha 1 - Filtros (só mostra se não estiver em rota) */}
-        {!routes.length && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
-            <View style={styles.chipActive}><Text style={styles.chipActiveText}>Todos</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>Crimes</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>Tráfego</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>Iluminação</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>Suspeitos</Text></View>
-          </ScrollView>
-        )}
-
-        {/* Linha 2 - Busca */}
-        <View style={styles.searchContainer}>
-          <Search color="#999" size={20} />
-          <TextInput 
-            style={styles.searchInput}
-            placeholder="Para onde?"
-            placeholderTextColor="#999"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {isSearching ? (
-             <ActivityIndicator color="#00C853" size="small" />
-          ) : (
-             <Mic color="#999" size={20} />
+      {/* BOTTOM SHEET ARRASTÁVEL (Busca e Menu) */}
+      <BottomSheet
+        ref={mapPanelRef}
+        index={0}
+        snapPoints={MAP_PANEL_SNAP}
+        backgroundStyle={styles.bsBackground}
+        handleIndicatorStyle={styles.bsHandle}
+        enablePanDownToClose={false}
+        style={{ zIndex: 10 }}
+      >
+        <BottomSheetScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[styles.bsContent, { paddingBottom: Math.max(insets.bottom, 24) + 95 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Filtros */}
+          {!routes.length && (
+            <GHScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
+              <TouchableOpacity onPress={() => setActiveFilter('all')} style={activeFilter === 'all' ? styles.chipActive : styles.chip}>
+                <Text style={activeFilter === 'all' ? styles.chipActiveText : styles.chipText}>Todos</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setActiveFilter('furto')} style={activeFilter === 'furto' ? styles.chipActive : styles.chip}>
+                <Text style={activeFilter === 'furto' ? styles.chipActiveText : styles.chipText}>Crimes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setActiveFilter('infraestrutura')} style={activeFilter === 'infraestrutura' ? styles.chipActive : styles.chip}>
+                <Text style={activeFilter === 'infraestrutura' ? styles.chipActiveText : styles.chipText}>Tráfego</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setActiveFilter('iluminacao')} style={activeFilter === 'iluminacao' ? styles.chipActive : styles.chip}>
+                <Text style={activeFilter === 'iluminacao' ? styles.chipActiveText : styles.chipText}>Iluminação</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setActiveFilter('suspeito')} style={activeFilter === 'suspeito' ? styles.chipActive : styles.chip}>
+                <Text style={activeFilter === 'suspeito' ? styles.chipActiveText : styles.chipText}>Suspeitos</Text>
+              </TouchableOpacity>
+            </GHScrollView>
           )}
-        </View>
 
-        {/* Lista de Sugestões (Nominatim) */}
-        {suggestions.length > 0 && (
-          <View style={styles.suggestionsList}>
-            {suggestions.map((sug, i) => (
-              <TouchableOpacity key={i} style={styles.suggestionItem} onPress={() => handleSelectDestination(sug)}>
-                <MapPin color="#666" size={18} />
-                <Text style={styles.suggestionText} numberOfLines={1}>{sug.name}</Text>
+          {/* Busca */}
+          <View style={styles.searchContainer}>
+            <Search color="#999" size={20} />
+            <TextInput
+              ref={searchInputRef}
+              style={styles.searchInput}
+              placeholder="Para onde?"
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onFocus={() => mapPanelRef.current?.snapToIndex(1)}
+            />
+            {isSearching ? (
+               <ActivityIndicator color="#00C853" size="small" />
+            ) : (
+               <Mic color="#999" size={20} />
+            )}
+          </View>
+
+          {/* Sugestões */}
+          {suggestions.length > 0 && (
+            <View style={styles.suggestionsList}>
+              {suggestions.map((sug, i) => (
+                <TouchableOpacity key={i} style={styles.suggestionItem} onPress={() => handleSelectDestination(sug)}>
+                  <MapPin color="#666" size={18} />
+                  <Text style={styles.suggestionText} numberOfLines={1}>{sug.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Atalhos ou Modo de Transporte */}
+          {!destination ? (
+            <View style={styles.destinationsContainer}>
+              <TouchableOpacity 
+                style={styles.destBtn} 
+                onPress={() => handleAddressPress('home')}
+                onLongPress={() => handleEditAddress('home')}
+                delayLongPress={500}
+              >
+                <Home color="#00C853" size={18} />
+                <Text style={styles.destText}>Casa</Text>
               </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Linha 3 - Atalhos ou Modais de Transporte */}
-        {!destination ? (
-          <View style={styles.destinationsContainer}>
-            <TouchableOpacity style={styles.destBtn}>
-              <Home color="#00C853" size={18} />
-              <Text style={styles.destText}>Casa</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.destBtn}>
-              <Briefcase color="#FFB300" size={18} />
-              <Text style={styles.destText}>Trabalho</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.destBtnNew}>
-              <Plus color="#00C853" size={18} />
-              <Text style={styles.destTextNew}>Novo</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.destinationsContainer}>
-            <TouchableOpacity 
-              style={[styles.transportBtn, transportMode === 'foot' && styles.transportBtnActive]}
-              onPress={() => handleCalculateRoute(destination, 'foot')}
-            >
-              <MapIcon color={transportMode === 'foot' ? '#00C853' : '#FFF'} size={20} />
-              <Text style={[styles.destText, transportMode === 'foot' && {color: '#00C853'}]}>A pé</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.transportBtn, transportMode === 'bike' && styles.transportBtnActive]}
-              onPress={() => handleCalculateRoute(destination, 'bike')}
-            >
-              <Bike color={transportMode === 'bike' ? '#00C853' : '#FFF'} size={20} />
-              <Text style={[styles.destText, transportMode === 'bike' && {color: '#00C853'}]}>Bike</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.transportBtn, transportMode === 'car' && styles.transportBtnActive]}
-              onPress={() => handleCalculateRoute(destination, 'car')}
-            >
-              <Car color={transportMode === 'car' ? '#00C853' : '#FFF'} size={20} />
-              <Text style={[styles.destText, transportMode === 'car' && {color: '#00C853'}]}>Carro</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Conteúdo Expandido (Recentes) */}
-        {!routes.length && (
-          <Animated.View style={[styles.expandedContent, expandedStyle]}>
-            <Text style={styles.recentTitle}>Pesquisas recentes</Text>
-            {['Avenida Paulista, 1578', 'Shopping Morumbi', 'Delegacia de Polícia - 4º DP', 'Estação da Luz'].map((loc, i) => (
-              <TouchableOpacity key={i} style={styles.recentItem} onPress={() => setSearchQuery(loc)}>
-                <Clock color="#666" size={18} />
-                <Text style={styles.recentItemText}>{loc}</Text>
+              <TouchableOpacity 
+                style={styles.destBtn}
+                onPress={() => handleAddressPress('work')}
+                onLongPress={() => handleEditAddress('work')}
+                delayLongPress={500}
+              >
+                <Briefcase color="#FFB300" size={18} />
+                <Text style={styles.destText}>Trabalho</Text>
               </TouchableOpacity>
-            ))}
-          </Animated.View>
-        )}
-      </View>
+              <TouchableOpacity 
+                style={styles.destBtnNew} 
+                onPress={() => {
+                  mapPanelRef.current?.snapToIndex(1);
+                  searchInputRef.current?.focus();
+                }}
+              >
+                <Plus color="#00C853" size={18} />
+                <Text style={styles.destTextNew}>Novo</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.destinationsContainer}>
+              <TouchableOpacity
+                style={[styles.transportBtn, transportMode === 'foot' && styles.transportBtnActive]}
+                onPress={() => handleCalculateRoute(destination, 'foot')}
+              >
+                <MapIcon color={transportMode === 'foot' ? '#00C853' : '#FFF'} size={20} />
+                <Text style={[styles.destText, transportMode === 'foot' && {color: '#00C853'}]}>A pé</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.transportBtn, transportMode === 'bike' && styles.transportBtnActive]}
+                onPress={() => handleCalculateRoute(destination, 'bike')}
+              >
+                <Bike color={transportMode === 'bike' ? '#00C853' : '#FFF'} size={20} />
+                <Text style={[styles.destText, transportMode === 'bike' && {color: '#00C853'}]}>Bike</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.transportBtn, transportMode === 'car' && styles.transportBtnActive]}
+                onPress={() => handleCalculateRoute(destination, 'car')}
+              >
+                <Car color={transportMode === 'car' ? '#00C853' : '#FFF'} size={20} />
+                <Text style={[styles.destText, transportMode === 'car' && {color: '#00C853'}]}>Carro</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Pesquisas recentes */}
+          {!routes.length && (
+            <View style={{ marginTop: 20 }}>
+              <Text style={styles.recentTitle}>Pesquisas recentes</Text>
+              {recentSearches.length === 0 ? (
+                <Text style={{ color: '#555', fontSize: 13, marginTop: 8 }}>
+                  Suas buscas aparecerão aqui
+                </Text>
+              ) : (
+                recentSearches.map((loc, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={styles.recentItem}
+                    onPress={() => setSearchQuery(loc)}
+                  >
+                    <Clock color="#666" size={18} />
+                    <Text style={styles.recentItemText}>{loc}</Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          )}
+        </BottomSheetScrollView>
+      </BottomSheet>
 
       <AlertDetailsSheet
-        ref={bottomSheetRef}
+        ref={alertSheetRef}
         alert={selectedAlert}
         onVote={handleVote}
         isVoting={isVoting}
         onClose={() => setSelectedAlert(null)}
       />
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
@@ -377,19 +564,47 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center', justifyContent: 'center',
   },
-  timeText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  timeText: { 
+    color: '#00C853', 
+    fontSize: 16, 
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#00C853',
+    overflow: 'hidden'
+  },
   alertBtn: {
     width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFB300',
     alignItems: 'center', justifyContent: 'center',
   },
 
-  userMarkerHalo: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(0, 200, 83, 0.2)',
-    alignItems: 'center', justifyContent: 'center',
+  // Ponto azul do usuário (estilo iOS)
+  userDot: {
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: '#007AFF',
+    borderWidth: 3, borderColor: '#FFFFFF',
+    ...(Platform.OS !== 'web' && {
+      shadowColor: '#007AFF',
+      shadowRadius: 6,
+      shadowOpacity: 0.6,
+      shadowOffset: { width: 0, height: 0 },
+    }),
+    elevation: 8,
   },
-  userMarkerCore: {
-    width: 14, height: 14, borderRadius: 7, backgroundColor: '#00C853',
-    borderWidth: 2, borderColor: '#FFF',
+  centerBtn: {
+    position: 'absolute', right: 16, zIndex: 10,
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: '#2A2A2A',
+    ...(Platform.OS !== 'web' && {
+      shadowColor: '#000', shadowRadius: 8, shadowOpacity: 0.4,
+      shadowOffset: { width: 0, height: 2 },
+    }),
+    elevation: 8,
   },
 
   destinationPinWrapper: { alignItems: 'center' },
@@ -422,11 +637,11 @@ const styles = StyleSheet.create({
   },
   startNavText: { color: '#000', fontWeight: 'bold', fontSize: 16 },
 
-  bottomSheet: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
-    backgroundColor: '#1A1A1A', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingHorizontal: 20, paddingTop: 8,
-  },
+  bsBackground: { backgroundColor: '#1A1A1A', borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  bsHandle: { backgroundColor: '#444', width: 40 },
+  bsContent: { paddingHorizontal: 20, paddingTop: 4 },
+  // Legacy bottom sheet styles kept for compat
+  bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, backgroundColor: '#1A1A1A', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 8 },
   dragHandleArea: { width: '100%', paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
   dragHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#333' },
   

@@ -9,6 +9,7 @@
  */
 
 import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Stack } from 'expo-router';
@@ -108,6 +109,20 @@ function RouteGuard() {
             animation: 'slide_from_bottom',
           }} 
         />
+        <Stack.Screen 
+          name="sos-modal" 
+          options={{
+            presentation: 'transparentModal',
+            animation: 'fade',
+          }} 
+        />
+        <Stack.Screen 
+          name="address-modal" 
+          options={{
+            presentation: 'transparentModal',
+            animation: 'fade',
+          }} 
+        />
       </Stack>
     </>
   );
@@ -133,10 +148,12 @@ export default function RootLayout() {
   }
 
   return (
-    <AccessibilityProvider>
-      <AuthProvider>
-        <RouteGuard />
-      </AuthProvider>
-    </AccessibilityProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AccessibilityProvider>
+        <AuthProvider>
+          <RouteGuard />
+        </AuthProvider>
+      </AccessibilityProvider>
+    </GestureHandlerRootView>
   );
 }
