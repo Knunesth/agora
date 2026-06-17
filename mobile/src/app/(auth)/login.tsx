@@ -17,9 +17,7 @@ import { spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 import { supabase } from '@/services/supabase';
 
-// Credenciais de teste — visíveis somente em modo DEV
-const TEST_EMAIL    = 'teste@agora.app';
-const TEST_PASSWORD = 'Agora@2025';
+
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -65,11 +63,7 @@ export default function LoginScreen() {
     // RouteGuard cuida do redirecionamento pós-login.
   };
 
-  const handleTestLogin = () => {
-    setEmail(TEST_EMAIL);
-    setPassword(TEST_PASSWORD);
-    setErrorMsg('');
-  };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -154,14 +148,7 @@ export default function LoginScreen() {
               style={{ height: 56 }}
             />
 
-            {/* Botão DEV */}
-            {__DEV__ && (
-              <TouchableOpacity style={styles.devButton} onPress={handleTestLogin}>
-                <RNText style={styles.devButtonText}>
-                  {'🧪 Preencher login de teste'}
-                </RNText>
-              </TouchableOpacity>
-            )}
+
           </View>
 
           {/* ── Divisor ────────────────────────────────────────────── */}
@@ -241,16 +228,6 @@ const styles = StyleSheet.create({
   forgotText: {
     fontSize: 14, color: colors.primary, fontWeight: '600',
     fontFamily: typography.fontFamily.medium,
-  },
-
-  // DEV button
-  devButton: {
-    marginTop: spacing.xs, padding: spacing.sm,
-    borderRadius: 8, borderWidth: 1, borderColor: '#444',
-    borderStyle: 'dashed', alignItems: 'center',
-  },
-  devButtonText: {
-    color: '#888', fontSize: 12, fontFamily: typography.fontFamily.regular,
   },
 
   // Divider
