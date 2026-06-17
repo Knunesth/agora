@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Text as RNText, Platform, Alert } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text as RNText, Platform, Alert, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LongPressGestureHandler, State } from 'react-native-gesture-handler';
 import Animated, { 
@@ -90,7 +90,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   };
 
   return (
-    <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+    <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 16) }]} pointerEvents="box-none">
       
       {/* Pílula flutuante */}
       <View style={styles.pillContainer}>
@@ -111,7 +111,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       </View>
 
       {/* Botão SOS — Posicionamento Absoluto saindo da tab bar */}
-      <View style={styles.sosContainer} pointerEvents="box-none">
+      <View style={[styles.sosContainer, { bottom: Math.max(insets.bottom, 16) + 12 }]} pointerEvents="box-none">
         
         {/* Efeito Glow Difuso Pulsante */}
         <Animated.View style={[styles.glowWrapper, animatedGlow]} pointerEvents="none">
@@ -120,25 +120,22 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         </Animated.View>
 
         {/* Botão Físico SOS */}
-        <LongPressGestureHandler
-          onHandlerStateChange={({ nativeEvent }) => {
-            if (nativeEvent.state === State.BEGAN) {
-              // Animação de 'encolher' e dar feedback de que está segurando
-              sosScale.value = withTiming(0.85, { duration: 800 });
-            } else if (nativeEvent.state === State.ACTIVE) {
-              // Terminou o tempo do long press: dispara e volta pro tamanho normal com mola
-              handleSOSActivate();
-              sosScale.value = withSpring(1, { damping: 12, stiffness: 200 });
-            } else if (
-              nativeEvent.state === State.FAILED ||
-              nativeEvent.state === State.CANCELLED ||
-              nativeEvent.state === State.END
-            ) {
-              // Soltou o dedo antes do tempo ou o gesto foi cancelado
-              sosScale.value = withSpring(1, { damping: 12, stiffness: 200 });
+        <Pressable
+          onPressIn={() => {
+            sosScale.value = withTiming(0.85, { duration: 800 });
+          }}
+          onPressOut={() => {
+            sosScale.value = withSpring(1, { damping: 12, stiffness: 200 });
+          }}
+          onLongPress={handleSOSActivate}
+          delayLongPress={800}
+          onPress={() => {
+            if (Platform.OS === 'web') {
+              window.alert('Segure o botão SOS por 1 segundo para ativar a emergência.');
+            } else {
+              Alert.alert('Atenção', 'Segure o botão SOS por 1 segundo para ativar a emergência.');
             }
           }}
-          minDurationMs={800}
         >
           <Animated.View style={[styles.sosButtonOuter, animatedSosButton]}>
             <LinearGradient
@@ -156,7 +153,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
               </View>
             </LinearGradient>
           </Animated.View>
-        </LongPressGestureHandler>
+        </Pressable>
 
       </View>
     </View>
@@ -234,7 +231,6 @@ const styles = StyleSheet.create({
      ------------------------------- */
   sosContainer: {
     position: 'absolute',
-    bottom: 30, // Traduz para cima da tab bar
     left: '50%',
     marginLeft: -42, // (width / 2)
     width: 84,
@@ -342,8 +338,9 @@ const styles = StyleSheet.create({
   sosTextSub: {
     color: '#FFFFFF',
     fontWeight: '800',
-    fontSize: 8,
-    letterSpacing: 1.5, // 0.2em
+    fontSize: 7,
+    letterSpacing: 0.5,
     marginTop: -2,
+    textAlign: 'center',
   },
 });

@@ -156,7 +156,8 @@ export default function AlertsScreen() {
           );
         })}
 
-        <View style={{ height: spacing.xl }} />
+        {/* Espaçamento extra no final para a CustomTabBar não cobrir o último item */}
+        <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>
   );

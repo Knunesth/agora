@@ -27,14 +27,17 @@ export default function LoginScreen() {
   const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const isLoadingRef = useRef(false);
 
   const handleLogin = async (e?: any) => {
     if (e && e.preventDefault) e.preventDefault();
     if (isLoadingRef.current) return;
+    
+    setErrorMsg('');
 
     if (!email || !password) {
-      Alert.alert('Atenção', 'Preencha email e senha.');
+      setErrorMsg('Preencha email e senha.');
       return;
     }
 
@@ -46,10 +49,15 @@ export default function LoginScreen() {
         password,
       });
       if (error) {
-        Alert.alert('Erro no Login', error.message);
+        if (error.message.includes('Invalid login credentials')) {
+          setErrorMsg('Email ou senha incorretos. Verifique seus dados e tente novamente.');
+        } else {
+          setErrorMsg(error.message);
+        }
       }
     } catch (err) {
       console.error(err);
+      setErrorMsg('Ocorreu um erro inesperado.');
     } finally {
       isLoadingRef.current = false;
       setIsLoading(false);
@@ -60,6 +68,7 @@ export default function LoginScreen() {
   const handleTestLogin = () => {
     setEmail(TEST_EMAIL);
     setPassword(TEST_PASSWORD);
+    setErrorMsg('');
   };
 
   return (
@@ -95,6 +104,12 @@ export default function LoginScreen() {
           <View style={styles.titleSection}>
             <RNText style={styles.welcomeTitle}>Bem-vindo(a) de volta</RNText>
             <RNText style={styles.welcomeSubtitle}>Entre na sua conta para continuar.</RNText>
+            
+            {errorMsg ? (
+              <View style={styles.errorContainer}>
+                <RNText style={styles.errorText}>{errorMsg}</RNText>
+              </View>
+            ) : null}
           </View>
 
           {/* ── Formulário ─────────────────────────────────────────── */}
@@ -208,6 +223,16 @@ const styles = StyleSheet.create({
   welcomeSubtitle: {
     fontSize: 15, color: colors.textSecondary,
     fontFamily: typography.fontFamily.regular,
+  },
+  errorContainer: {
+    marginTop: spacing.md, padding: spacing.sm,
+    backgroundColor: '#FEE2E2', borderRadius: 8,
+    borderWidth: 1, borderColor: '#F87171',
+  },
+  errorText: {
+    color: '#B91C1C', fontSize: 14,
+    fontFamily: typography.fontFamily.medium,
+    textAlign: 'center',
   },
 
   // Form

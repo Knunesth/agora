@@ -170,9 +170,9 @@ export default function PartnersScreen() {
                 <Text style={styles.cardHours}>
                   <Clock size={11} color="#888" /> {store.hours.split('|')[0]}
                 </Text>
-                <View style={[styles.verifiedBadge, { borderColor: store.accent }]}>
-                  <CheckCircle size={11} color={store.accent} />
-                  <Text style={[styles.verifiedText, { color: store.accent }]}>Verificado</Text>
+                <View style={[styles.verifiedBadge, { borderColor: '#448AFF' }]}>
+                  <CheckCircle size={11} color="#448AFF" />
+                  <Text style={[styles.verifiedText, { color: '#448AFF' }]}>Verificado</Text>
                 </View>
               </View>
             </View>
@@ -238,8 +238,8 @@ export default function PartnersScreen() {
                   <Text style={styles.sheetSectionTitle}>Serviços oferecidos</Text>
                   <View style={styles.featuresGrid}>
                     {selectedStore.features.map((f) => (
-                      <View key={f} style={[styles.featureChip, { borderColor: selectedStore.accent + '44' }]}>
-                        <CheckCircle size={13} color={selectedStore.accent} />
+                      <View key={f} style={[styles.featureChip, { borderColor: '#448AFF44' }]}>
+                        <CheckCircle size={13} color="#448AFF" />
                         <Text style={styles.featureChipText}>{f}</Text>
                       </View>
                     ))}
@@ -258,7 +258,7 @@ export default function PartnersScreen() {
                           </View>
                         ) : null}
                       </View>
-                      <Text style={[styles.productPrice, { color: selectedStore.accent }]}>{p.price}</Text>
+                      <Text style={[styles.productPrice, { color: '#448AFF' }]}>{p.price}</Text>
                     </View>
                   ))}
 

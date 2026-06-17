@@ -242,12 +242,18 @@ export default function ReportModal() {
 
       if (error) throw error;
 
-      RNAlert.alert('Sucesso', 'Alerta registrado e em quarentena de verificação.', [
-        { text: 'OK', onPress: () => {
-          if (router.canGoBack()) router.back();
-          else router.replace('/(tabs)');
-        }}
-      ]);
+      if (Platform.OS === 'web') {
+        window.alert('Sucesso: Alerta registrado e em quarentena de verificação.');
+        if (router.canGoBack()) router.back();
+        else router.replace('/(tabs)');
+      } else {
+        RNAlert.alert('Sucesso', 'Alerta registrado e em quarentena de verificação.', [
+          { text: 'OK', onPress: () => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(tabs)');
+          }}
+        ]);
+      }
     } catch (err: any) {
       RNAlert.alert('Erro no Envio', err.message);
     } finally {

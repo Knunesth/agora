@@ -59,6 +59,7 @@ export default function ProfileScreen() {
   // Contagem de alertas do usuário logado
   const myAlerts = alerts.filter(a => a.userId === user?.id);
   const confirmedAlerts = myAlerts.filter(a => a.status === 'verified');
+  const totalConfirmations = myAlerts.reduce((acc, a) => acc + (a.confirmations || 0), 0);
 
   const handleSignOut = async () => {
     RNAlert.alert('Sair', 'Tem certeza que deseja sair?', [
@@ -133,6 +134,13 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statCard}>
+            <Text style={[styles.statNumber, { color: colors.warning }]}>
+              {totalConfirmations}
+            </Text>
+            <Text variant="caption" color={colors.textSecondary}>Votos Recebidos</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statCard}>
             <Text style={[styles.statNumber, { color: colors.primary }]}>
               {confirmedAlerts.length}
             </Text>
@@ -164,7 +172,7 @@ export default function ProfileScreen() {
                   {alert.category.charAt(0).toUpperCase() + alert.category.slice(1)}
                 </Text>
                 <Text variant="caption" color={colors.textMuted}>
-                  Sua área · {date}
+                  Sua área · {date} · 👍 {alert.confirmations || 0}
                 </Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: s.bg }]}>

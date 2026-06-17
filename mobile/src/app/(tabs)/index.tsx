@@ -6,7 +6,7 @@
 
 import React, { useState, useCallback } from 'react';
 import {
-  View, StyleSheet, ScrollView, TouchableOpacity,
+  View, StyleSheet, ScrollView, Pressable,
   ActivityIndicator, Text as RNText,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -137,23 +137,24 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
       >
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.iconButton} 
+          <Pressable 
+            style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.7 : 1 }]} 
             accessibilityLabel="Menu"
             onPress={openMenu}
           >
             <Menu color={colors.textPrimary} size={22} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.bellButton} 
+          </Pressable>
+          <Pressable 
+            style={({ pressed }) => [styles.bellButton, { opacity: pressed ? 0.7 : 1 }]} 
             accessibilityLabel="Notificações"
             onPress={() => router.push('/notifications-feed')}
           >
             <Bell color={colors.textPrimary} size={22} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* ── Saudação ───────────────────────────────────────────────────── */}
@@ -168,8 +169,8 @@ export default function HomeScreen() {
             <ActivityIndicator color={colors.primary} />
           </View>
         ) : activeAlert ? (
-          <TouchableOpacity
-            style={styles.activeAlertCard}
+          <Pressable
+            style={({ pressed }) => [styles.activeAlertCard, { opacity: pressed ? 0.7 : 1 }]}
             onPress={() => router.push({ pathname: '/alert-details', params: { alert: JSON.stringify(activeAlert) } })}
             accessibilityLabel="Ver alerta ativo"
           >
@@ -185,14 +186,13 @@ export default function HomeScreen() {
               {categoryLabel(activeAlert.category)}
             </RNText>
             <RNText style={styles.activeAlertLink}>Ver detalhes  {'>'}</RNText>
-          </TouchableOpacity>
+          </Pressable>
         ) : null}
 
         {/* ── Card Nível de Risco (Gauge) ─────────────────────────────────── */}
-        <TouchableOpacity 
-          style={styles.riskCard} 
+        <Pressable 
+          style={({ pressed }) => [styles.riskCard, { opacity: pressed ? 0.8 : 1 }]} 
           onPress={() => riskSheetRef.current?.expand()}
-          activeOpacity={0.8}
         >
           <RNText style={styles.riskCardLabel}>Nível de risco na sua região</RNText>
           <View style={styles.gaugeRow}>
@@ -203,14 +203,14 @@ export default function HomeScreen() {
               {'● ' + riskLabel}
             </RNText>
           </View>
-        </TouchableOpacity>
+        </Pressable>
 
         {/* ── Grid de Ações Rápidas ───────────────────────────────────────── */}
         <View style={styles.grid}>
           {actions.map(action => (
-            <TouchableOpacity
+            <Pressable
               key={action.id}
-              style={[styles.gridCard, { backgroundColor: action.bg }]}
+              style={({ pressed }) => [styles.gridCard, { backgroundColor: action.bg, opacity: pressed ? 0.7 : 1 }]}
               onPress={action.onPress}
               accessibilityLabel={action.title + ' ' + action.subtitle}
             >
@@ -219,16 +219,16 @@ export default function HomeScreen() {
                 <RNText style={styles.gridCardTitle}>{action.title}</RNText>
                 <RNText style={styles.gridCardSubtitle}>{action.subtitle}</RNText>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
 
         {/* ── Alertas Próximos ────────────────────────────────────────── */}
         <View style={styles.sectionHeader}>
           <RNText style={styles.sectionTitle}>Alertas próximos</RNText>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/alerts' as any)}>
+          <Pressable onPress={() => router.push('/(tabs)/alerts' as any)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
             <RNText style={styles.sectionLink}>Ver todos</RNText>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {!loading && recentAlerts.length === 0 && (
@@ -246,9 +246,9 @@ export default function HomeScreen() {
           const timeAgo = getTimeAgo(alert.createdAt);
 
           return (
-            <TouchableOpacity
+            <Pressable
               key={alert.id}
-              style={styles.incidentRow}
+              style={({ pressed }) => [styles.incidentRow, { opacity: pressed ? 0.7 : 1 }]}
               onPress={() => router.push({ pathname: '/alert-details', params: { alert: JSON.stringify(alert) } })}
               accessibilityLabel={categoryLabel(alert.category)}
             >
@@ -275,20 +275,22 @@ export default function HomeScreen() {
               </View>
 
               <ChevronRight color={colors.textMuted} size={16} />
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
 
         {/* Espaçamento extra no final para a CustomTabBar não cobrir o último item */}
-        <View style={{ height: spacing.xxl }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       {/* ── Sheets ──────────────────────────────────────────────────────── */}
-      <RiskDetailsSheet 
-        ref={riskSheetRef} 
-        alerts={alerts} 
-        onClose={() => riskSheetRef.current?.close()} 
-      />
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <RiskDetailsSheet 
+          ref={riskSheetRef} 
+          alerts={alerts} 
+          onClose={() => riskSheetRef.current?.close()} 
+        />
+      </View>
     </SafeAreaView>
   );
 }
