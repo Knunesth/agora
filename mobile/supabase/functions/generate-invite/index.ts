@@ -47,7 +47,8 @@ serve(async (req) => {
     if (existingInvites && existingInvites.length > 0) {
       // Reuse the first valid pending invite
       const code = existingInvites[0].invite_code;
-      return new Response(JSON.stringify({ link: `https://agora.app/convite/${code}` }), {
+      const inviteLink = `${Deno.env.get("APP_URL") || "https://agora-app-swart.vercel.app"}/convite/${code}`;
+      return new Response(JSON.stringify({ link: inviteLink }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -81,7 +82,8 @@ serve(async (req) => {
 
     if (insertError) throw insertError;
 
-    return new Response(JSON.stringify({ link: `https://agora.app/convite/${newInvite.invite_code}` }), {
+    const inviteLink = `${Deno.env.get("APP_URL") || "https://agora-app-swart.vercel.app"}/convite/${newInvite.invite_code}`;
+    return new Response(JSON.stringify({ link: inviteLink }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

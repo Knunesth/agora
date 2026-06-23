@@ -334,6 +334,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     fontSize: 20,
     letterSpacing: 0.5,
+    userSelect: 'none',
   },
   sosTextSub: {
     color: '#FFFFFF',
@@ -342,5 +343,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: -2,
     textAlign: 'center',
+    userSelect: 'none',
   },
 });

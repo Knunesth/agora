@@ -188,5 +188,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: 2,
+    userSelect: 'none',
   },
 });
