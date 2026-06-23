@@ -22,12 +22,14 @@ interface AlertDetailsSheetProps {
   onVote: (vote: 'confirm' | 'reject') => Promise<void>;
   isVoting: boolean;
   onClose: () => void;
+  onDeleteSuccess?: () => void;
 }
 
 export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>(
-  ({ alert, onVote, isVoting, onClose }, ref) => {
+  ({ alert, onVote, isVoting, onClose, onDeleteSuccess }, ref) => {
     const { user } = useAuth();
     const [address, setAddress] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     
     // Busca endereço legível por geocodificação reversa
     useEffect(() => {
@@ -49,6 +51,37 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
     if (!alert) return null;
 
     const isVerified = alert.status === 'verified';
+
+    const handleDeleteAlert = async () => {
+      import('react-native').then(({ Alert: RNAlert }) => {
+        RNAlert.alert(
+          'Cancelar Alerta',
+          'Tem certeza que deseja apagar este alerta? Esta ação não pode ser desfeita.',
+          [
+            { text: 'Não', style: 'cancel' },
+            { 
+              text: 'Sim, apagar', 
+              style: 'destructive',
+              onPress: async () => {
+                setIsDeleting(true);
+                try {
+                  const { supabase } = await import('@/services/supabase');
+                  const { error } = await supabase.from('alerts').delete().eq('id', alert.id);
+                  if (error) throw error;
+                  RNAlert.alert('Sucesso', 'Alerta apagado com sucesso.');
+                  onClose();
+                  if (onDeleteSuccess) onDeleteSuccess();
+                } catch (err: any) {
+                  RNAlert.alert('Erro', 'Falha ao apagar alerta.');
+                } finally {
+                  setIsDeleting(false);
+                }
+              }
+            }
+          ]
+        );
+      });
+    };
     
     return (
       <BottomSheet
@@ -120,9 +153,19 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
 
             {isOwnAlert ? (
               <View style={styles.ownAlertMessage}>
-                <Text variant="bodySmall" align="center" color={colors.primary}>
-                  Este é o seu reporte. Aguarde os votos da comunidade.
-                </Text>
+                {!isVerified && (
+                  <Text variant="bodySmall" align="center" color={colors.primary} style={{ marginBottom: spacing.md }}>
+                    Este é o seu reporte. Aguarde os votos da comunidade.
+                  </Text>
+                )}
+                <Button 
+                  title={isDeleting ? 'Apagando...' : 'Excluir Meu Alerta'} 
+                  variant="secondary" 
+                  onPress={handleDeleteAlert} 
+                  disabled={isDeleting || isVoting}
+                  style={{ borderColor: colors.danger, borderWidth: 1 }}
+                  textStyle={{ color: colors.danger }}
+                />
               </View>
             ) : isVerified ? (
               <View style={styles.ownAlertMessage}>

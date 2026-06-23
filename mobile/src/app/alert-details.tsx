@@ -111,6 +111,33 @@ export default function AlertDetailsScreen() {
     }
   };
 
+  const handleDeleteAlert = async () => {
+    RNAlert.alert(
+      'Cancelar Alerta',
+      'Tem certeza que deseja apagar este alerta? Esta ação não pode ser desfeita.',
+      [
+        { text: 'Não', style: 'cancel' },
+        { 
+          text: 'Sim, apagar', 
+          style: 'destructive',
+          onPress: async () => {
+            setIsVoting(true);
+            try {
+              const { error } = await supabase.from('alerts').delete().eq('id', alert.id);
+              if (error) throw error;
+              RNAlert.alert('Sucesso', 'Alerta apagado com sucesso.');
+              router.back();
+            } catch (err: any) {
+              RNAlert.alert('Erro', 'Falha ao apagar alerta.');
+            } finally {
+              setIsVoting(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -231,11 +258,20 @@ export default function AlertDetailsScreen() {
             </View>
           )}
 
-          {!isVerified && isOwnAlert && (
+          {isOwnAlert && (
             <View style={[styles.voteSection, { alignItems: 'center', paddingVertical: spacing.xl }]}>
-              <Text variant="bodySmall" color={colors.primary} style={{ textAlign: 'center' }}>
-                Este é o seu reporte. Aguarde os votos da comunidade para alcançar o consenso.
-              </Text>
+              {!isVerified && (
+                <Text variant="bodySmall" color={colors.primary} style={{ textAlign: 'center', marginBottom: spacing.md }}>
+                  Este é o seu reporte. Aguarde os votos da comunidade para alcançar o consenso.
+                </Text>
+              )}
+              <TouchableOpacity
+                style={[styles.voteButton, styles.voteReject, { width: '100%', borderColor: colors.danger, borderWidth: 1 }]}
+                onPress={handleDeleteAlert}
+                disabled={isVoting}
+              >
+                <Text style={[styles.voteRejectText, { color: colors.danger }]}>Excluir Meu Alerta</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
