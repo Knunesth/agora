@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import {
-  View, StyleSheet, ScrollView, TouchableOpacity, Alert as RNAlert, Image, ActivityIndicator
+  View, StyleSheet, ScrollView, TouchableOpacity, Alert as RNAlert, Image, ActivityIndicator, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -112,30 +112,42 @@ export default function AlertDetailsScreen() {
   };
 
   const handleDeleteAlert = async () => {
-    RNAlert.alert(
-      'Cancelar Alerta',
-      'Tem certeza que deseja apagar este alerta? Esta ação não pode ser desfeita.',
-      [
-        { text: 'Não', style: 'cancel' },
-        { 
-          text: 'Sim, apagar', 
-          style: 'destructive',
-          onPress: async () => {
-            setIsVoting(true);
-            try {
-              const { error } = await supabase.from('alerts').delete().eq('id', alert.id);
-              if (error) throw error;
-              RNAlert.alert('Sucesso', 'Alerta apagado com sucesso.');
-              router.back();
-            } catch (err: any) {
-              RNAlert.alert('Erro', 'Falha ao apagar alerta.');
-            } finally {
-              setIsVoting(false);
-            }
-          }
+    const executeDelete = async () => {
+      setIsVoting(true);
+      try {
+        const { error } = await supabase.from('alerts').delete().eq('id', alert.id);
+        if (error) throw error;
+        if (Platform.OS !== 'web') {
+          RNAlert.alert('Sucesso', 'Alerta apagado com sucesso.');
+        } else {
+          window.alert('Alerta apagado com sucesso.');
         }
-      ]
-    );
+        router.back();
+      } catch (err: any) {
+        if (Platform.OS !== 'web') {
+          RNAlert.alert('Erro', 'Falha ao apagar alerta.');
+        } else {
+          window.alert('Falha ao apagar alerta.');
+        }
+      } finally {
+        setIsVoting(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('Tem certeza que deseja apagar este alerta? Esta ação não pode ser desfeita.')) {
+        executeDelete();
+      }
+    } else {
+      RNAlert.alert(
+        'Cancelar Alerta',
+        'Tem certeza que deseja apagar este alerta? Esta ação não pode ser desfeita.',
+        [
+          { text: 'Não', style: 'cancel' },
+          { text: 'Sim, apagar', style: 'destructive', onPress: executeDelete }
+        ]
+      );
+    }
   };
 
   return (
