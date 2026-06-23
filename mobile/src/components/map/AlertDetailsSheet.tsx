@@ -6,7 +6,7 @@
  */
 
 import { forwardRef, useMemo, useEffect, useState } from 'react';
-import { View, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Image, ActivityIndicator, Alert as RNAlert } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { ThumbsUp, ThumbsDown, ShieldAlert, CheckCircle, Clock, MapPin } from 'lucide-react-native';
 import * as Location from 'expo-location';
@@ -16,6 +16,7 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { Alert } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/services/supabase';
 
 interface AlertDetailsSheetProps {
   alert: Alert | null;
@@ -53,34 +54,31 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
     const isVerified = alert.status === 'verified';
 
     const handleDeleteAlert = async () => {
-      import('react-native').then(({ Alert: RNAlert }) => {
-        RNAlert.alert(
-          'Cancelar Alerta',
-          'Tem certeza que deseja apagar este alerta? Esta ação não pode ser desfeita.',
-          [
-            { text: 'Não', style: 'cancel' },
-            { 
-              text: 'Sim, apagar', 
-              style: 'destructive',
-              onPress: async () => {
-                setIsDeleting(true);
-                try {
-                  const { supabase } = await import('@/services/supabase');
-                  const { error } = await supabase.from('alerts').delete().eq('id', alert.id);
-                  if (error) throw error;
-                  RNAlert.alert('Sucesso', 'Alerta apagado com sucesso.');
-                  onClose();
-                  if (onDeleteSuccess) onDeleteSuccess();
-                } catch (err: any) {
-                  RNAlert.alert('Erro', 'Falha ao apagar alerta.');
-                } finally {
-                  setIsDeleting(false);
-                }
+      RNAlert.alert(
+        'Cancelar Alerta',
+        'Tem certeza que deseja apagar este alerta? Esta ação não pode ser desfeita.',
+        [
+          { text: 'Não', style: 'cancel' },
+          { 
+            text: 'Sim, apagar', 
+            style: 'destructive',
+            onPress: async () => {
+              setIsDeleting(true);
+              try {
+                const { error } = await supabase.from('alerts').delete().eq('id', alert.id);
+                if (error) throw error;
+                RNAlert.alert('Sucesso', 'Alerta apagado com sucesso.');
+                onClose();
+                if (onDeleteSuccess) onDeleteSuccess();
+              } catch (err: any) {
+                RNAlert.alert('Erro', 'Falha ao apagar alerta.');
+              } finally {
+                setIsDeleting(false);
               }
             }
-          ]
-        );
-      });
+          }
+        ]
+      );
     };
     
     return (
