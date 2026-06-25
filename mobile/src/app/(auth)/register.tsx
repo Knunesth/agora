@@ -96,7 +96,7 @@ export default function RegisterScreen() {
         router.push('/(auth)/success');
       }
     } catch (err) {
-      console.error(err);
+
     } finally {
       isLoadingRef.current = false;
       setIsLoading(false);
@@ -111,7 +111,7 @@ export default function RegisterScreen() {
       >
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           
-          {/* Header (Back) */}
+          {}
           <View style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
               <ChevronLeft color={colors.textPrimary} size={24} />
@@ -120,7 +120,7 @@ export default function RegisterScreen() {
             <View style={{ width: 40 }} />
           </View>
 
-          {/* Titles */}
+          {}
           <View style={styles.titleSection}>
             <Text variant="h2" style={styles.title}>Criar sua conta</Text>
             <Text variant="body" color={colors.textSecondary}>
@@ -128,7 +128,7 @@ export default function RegisterScreen() {
             </Text>
           </View>
 
-          {/* Form */}
+          {}
           <View style={styles.form}>
             <Input
               placeholder="Nome completo"
@@ -173,7 +173,7 @@ export default function RegisterScreen() {
               iconLeft={<Lock color={colors.textMuted} size={20} />}
             />
 
-            {/* Terms */}
+            {}
             <TouchableOpacity 
               style={styles.termsRow}
               onPress={() => setAcceptedTerms(!acceptedTerms)}
@@ -199,7 +199,7 @@ export default function RegisterScreen() {
 
           <View style={{ height: 40 }} />
 
-          {/* Footer */}
+          {}
           <View style={styles.footer}>
             <Text variant="bodySmall" color={colors.textSecondary}>Já tem conta? </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/login')}>

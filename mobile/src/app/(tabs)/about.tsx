@@ -31,7 +31,6 @@ import { Text } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing, borderRadius } from '@/theme/spacing';
 
-// ─── Dados ────────────────────────────────────────────────────────────────────
 
 const APP_VERSION = '1.0.0';
 const APP_BUILD   = '2025.1';
@@ -93,7 +92,6 @@ const LINKS = [
   },
 ];
 
-// ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function AboutScreen() {
   const router = useRouter();
@@ -101,7 +99,7 @@ export default function AboutScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
 
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ChevronLeft color={colors.textPrimary} size={24} />
@@ -115,7 +113,7 @@ export default function AboutScreen() {
         showsVerticalScrollIndicator={false}
       >
 
-        {/* ── Hero ────────────────────────────────────────────────────────── */}
+        {}
         <View style={styles.heroCard}>
           <View style={styles.logoContainer}>
             <Image
@@ -129,7 +127,7 @@ export default function AboutScreen() {
             Segurança comunitária colaborativa
           </Text>
 
-          {/* Badges de versão */}
+          {}
           <View style={styles.versionRow}>
             <View style={styles.versionBadge}>
               <Text style={styles.versionBadgeText}>v{APP_VERSION}</Text>
@@ -140,7 +138,7 @@ export default function AboutScreen() {
           </View>
         </View>
 
-        {/* ── Missão ──────────────────────────────────────────────────────── */}
+        {}
         <View style={styles.section}>
           <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>
             NOSSA MISSÃO
@@ -161,7 +159,7 @@ export default function AboutScreen() {
           </View>
         </View>
 
-        {/* ── Funcionalidades ──────────────────────────────────────────────── */}
+        {}
         <View style={styles.section}>
           <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>
             PRINCIPAIS FUNCIONALIDADES
@@ -181,7 +179,7 @@ export default function AboutScreen() {
           </View>
         </View>
 
-        {/* ── Equipe ───────────────────────────────────────────────────────── */}
+        {}
         <View style={styles.section}>
           <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>
             EQUIPE
@@ -206,7 +204,7 @@ export default function AboutScreen() {
           </View>
         </View>
 
-        {/* ── Links ────────────────────────────────────────────────────────── */}
+        {}
         <View style={styles.section}>
           <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>
             LINKS
@@ -228,7 +226,7 @@ export default function AboutScreen() {
           </View>
         </View>
 
-        {/* ── Rodapé ──────────────────────────────────────────────────────── */}
+        {}
         <View style={styles.footer}>
           <View style={styles.footerStars}>
             {[...Array(5)].map((_, i) => (
@@ -249,7 +247,6 @@ export default function AboutScreen() {
   );
 }
 
-// ─── Estilos ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {

@@ -23,11 +23,10 @@ import { useAlerts } from '@/hooks/useAlerts';
 import { useLocation } from '@/hooks/useLocation';
 import { GaugeChart, type RiskLevel } from '@/components/ui/GaugeChart';
 import { RiskDetailsSheet, getRiskLevel } from '@/components/ui/RiskDetailsSheet';
-import type { Alert } from '@/types';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useMenu } from '@/contexts/MenuContext';
+import { alertQueue } from '@/services/alertQueue';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getDistanceLabel(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371000;
@@ -76,11 +75,9 @@ function categoryLabel(cat: string) {
   return map[cat] ?? cat.charAt(0).toUpperCase() + cat.slice(1);
 }
 
-// ─── Quick Action Cards ────────────────────────────────────────────────────────
 
 interface ActionCard { id: string; icon: React.FC<any>; accent: string; bg: string; title: string; subtitle: string; onPress: () => void; }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -89,10 +86,12 @@ export default function HomeScreen() {
   const { alerts, loading, refetch } = useAlerts(location);
   const { openMenu } = useMenu();
   const riskSheetRef = React.useRef<BottomSheet>(null);
+  const [pendingAlerts, setPendingAlerts] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
       refetch();
+      alertQueue.count().then(setPendingAlerts);
     }, [refetch])
   );
 
@@ -100,7 +99,6 @@ export default function HomeScreen() {
     ?.split(' ')[0] ?? 'Cidadão';
 
   const activeAlert = alerts.find(a => a.status === 'pending' || a.status === 'verified') ?? null;
-  const totalAlerts = alerts.length;
   
   const overallRisk: RiskLevel = getRiskLevel(alerts);
   const riskLabel = overallRisk === 'high' ? 'ALTO RISCO' : overallRisk === 'medium' ? 'MÉDIO RISCO' : 'BAIXO RISCO';
@@ -139,7 +137,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ── Header ─────────────────────────────────────────────────────── */}
+        {}
         <View style={styles.header}>
           <Pressable 
             style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.7 : 1 }]} 
@@ -157,13 +155,22 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* ── Saudação ───────────────────────────────────────────────────── */}
+        {}
         <View style={styles.greeting}>
           <RNText style={styles.greetingTitle}>{'Olá, ' + firstName + '! 👋'}</RNText>
           <RNText style={styles.greetingSubtitle}>Sua segurança em primeiro lugar.</RNText>
         </View>
 
-        {/* ── Card Alerta Ativo ───────────────────────────────────────────── */}
+        {}
+        {pendingAlerts > 0 && (
+          <View style={styles.pendingBanner}>
+            <RNText style={styles.pendingText}>
+              ⏳ Você tem {pendingAlerts} alerta{pendingAlerts > 1 ? 's' : ''} aguardando envio
+            </RNText>
+          </View>
+        )}
+
+        {}
         {loading ? (
           <View style={styles.loadingCard}>
             <ActivityIndicator color={colors.primary} />
@@ -189,7 +196,7 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
 
-        {/* ── Card Nível de Risco (Gauge) ─────────────────────────────────── */}
+        {}
         <Pressable 
           style={({ pressed }) => [styles.riskCard, { opacity: pressed ? 0.8 : 1 }]} 
           onPress={() => riskSheetRef.current?.expand()}
@@ -205,7 +212,7 @@ export default function HomeScreen() {
           </View>
         </Pressable>
 
-        {/* ── Grid de Ações Rápidas ───────────────────────────────────────── */}
+        {}
         <View style={styles.grid}>
           {actions.map(action => (
             <Pressable
@@ -223,7 +230,7 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        {/* ── Alertas Próximos ────────────────────────────────────────── */}
+        {}
         <View style={styles.sectionHeader}>
           <RNText style={styles.sectionTitle}>Alertas próximos</RNText>
           <Pressable onPress={() => router.push('/(tabs)/alerts' as any)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
@@ -252,12 +259,12 @@ export default function HomeScreen() {
               onPress={() => router.push({ pathname: '/alert-details', params: { alert: JSON.stringify(alert) } })}
               accessibilityLabel={categoryLabel(alert.category)}
             >
-              {/* Ícone */}
+              {}
               <View style={[styles.incidentIconBox, { backgroundColor: cfg.bg }]}>
                 <IconComp color={cfg.color} size={20} strokeWidth={1.8} />
               </View>
 
-              {/* Texto */}
+              {}
               <View style={styles.incidentContent}>
                 <RNText style={styles.incidentTitle} numberOfLines={1}>
                   {categoryLabel(alert.category)}
@@ -267,7 +274,7 @@ export default function HomeScreen() {
                 </RNText>
               </View>
 
-              {/* Badge ALTO/MÉDIO/BAIXO */}
+              {}
               <View style={[styles.incidentBadge, { backgroundColor: cfg.bg }]}>
                 <RNText style={[styles.incidentBadgeText, { color: cfg.color }]}>
                   {cfg.label}
@@ -279,11 +286,11 @@ export default function HomeScreen() {
           );
         })}
 
-        {/* Espaçamento extra no final para a CustomTabBar não cobrir o último item */}
+        {}
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* ── Sheets ──────────────────────────────────────────────────────── */}
+      {}
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         <RiskDetailsSheet 
           ref={riskSheetRef} 
@@ -295,7 +302,6 @@ export default function HomeScreen() {
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0D0D0D' },
@@ -333,6 +339,22 @@ const styles = StyleSheet.create({
   greetingSubtitle: {
     fontSize: 13, color: '#888888',
     fontFamily: typography.fontFamily.regular,
+  },
+
+  // Pending Banner
+  pendingBanner: {
+    backgroundColor: '#1A1A00',
+    borderWidth: 1,
+    borderColor: '#554400',
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    alignItems: 'center',
+  },
+  pendingText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontFamily: typography.fontFamily.medium,
   },
 
   // Active Alert Card

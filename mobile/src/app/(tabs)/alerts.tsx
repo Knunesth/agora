@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Shield, Plus, AlertTriangle, Flame, ChevronRight } from 'lucide-react-native';
+import { Shield, AlertTriangle, Flame, ChevronRight } from 'lucide-react-native';
 import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing, borderRadius } from '@/theme/spacing';
@@ -57,7 +57,7 @@ export default function AlertsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header Card Verde Escuro */}
+      {}
       <View style={styles.headerCard}>
         <View style={styles.headerCardRow}>
           <Shield color={colors.primary} size={28} strokeWidth={1.5} />
@@ -74,7 +74,7 @@ export default function AlertsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
       >
-        {/* Botão Adicionar */}
+        {}
         <Button
           title="+ Adicionar Novo Alerta"
           variant="primary"
@@ -82,7 +82,7 @@ export default function AlertsScreen() {
           style={styles.addButton}
         />
 
-        {/* Estado de loading */}
+        {}
         {loading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator color={colors.primary} />
@@ -92,7 +92,7 @@ export default function AlertsScreen() {
           </View>
         )}
 
-        {/* Estado vazio */}
+        {}
         {!loading && alerts.length === 0 && (
           <View style={styles.emptyState}>
             <Shield color={colors.primary} size={40} strokeWidth={1} />
@@ -102,7 +102,7 @@ export default function AlertsScreen() {
           </View>
         )}
 
-        {/* Lista de Alertas */}
+        {}
         {alerts.map((alert) => {
           const risk = getRisk(alert.confirmations);
           const IconComp = CATEGORY_ICONS[alert.category] ?? AlertTriangle;
@@ -156,7 +156,7 @@ export default function AlertsScreen() {
           );
         })}
 
-        {/* Espaçamento extra no final para a CustomTabBar não cobrir o último item */}
+        {}
         <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>

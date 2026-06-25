@@ -34,7 +34,8 @@ export default ({ config }) => {
       permissions: [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
-        "CAMERA"
+        "CAMERA",
+        "RECEIVE_BOOT_COMPLETED"  // Necessário para expo-notifications
       ],
       intentFilters: [
         {
@@ -75,11 +76,29 @@ export default ({ config }) => {
           "imageWidth": 180
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#FF1744",
+          "defaultChannel": "alerts",
+          "sounds": ["default"]
+        }
+      ]
     ],
     experiments: {
       typedRoutes: true,
       reactCompiler: true
+    },
+    extra: {
+      // ⚠️  Substitua pelo ID real do seu projeto EAS.
+      // Encontre em: https://expo.dev/accounts/[usuário]/projects/agora
+      // Ou rode: npx eas project:info
+      // Sem este ID, push notifications remotas não funcionam.
+      eas: {
+        projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || 'SEU-PROJECT-ID-AQUI'
+      }
     }
   };
 };

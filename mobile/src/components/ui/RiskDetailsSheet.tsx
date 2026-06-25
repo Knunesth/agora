@@ -116,14 +116,14 @@ export const RiskDetailsSheet = forwardRef<BottomSheet, RiskDetailsSheetProps>(
             </View>
           </View>
 
-          {/* Section 1 - Summary */}
+          {}
           <View style={styles.section}>
             <Text style={styles.infoText}>📍 Raio monitorado: 5km ao redor da sua localização</Text>
             <Text style={styles.infoText}>🔴 Total de alertas ativos: {alerts.length}</Text>
             <Text style={styles.infoText}>⏳ Última atualização: agora</Text>
           </View>
 
-          {/* Section 2 - Breakdown */}
+          {}
           <View style={styles.section}>
             {Object.keys(counts).map(cat => {
               if (cat === 'outro' && counts[cat] === 0) return null;
@@ -143,14 +143,13 @@ export const RiskDetailsSheet = forwardRef<BottomSheet, RiskDetailsSheetProps>(
             })}
           </View>
 
-          {/* Section 3 - Histogram */}
+          {}
           <View style={styles.section}>
             <Text variant="bodySmall" color={colors.textSecondary} style={{ marginBottom: 16 }}>Histórico (últimas 6h)</Text>
             <Svg height="80" width="100%">
               {chartData.map((val, i) => {
                 const w = 30;
                 const spacing = 15;
-                const totalW = chartData.length * w + (chartData.length - 1) * spacing;
                 const startX = 0; // Or center it
                 const x = startX + i * (w + spacing);
                 const h = (val / maxBar) * 80 || 5; // min 5px height
@@ -169,7 +168,7 @@ export const RiskDetailsSheet = forwardRef<BottomSheet, RiskDetailsSheetProps>(
             </View>
           </View>
 
-          {/* Section 4 - Tips */}
+          {}
           <View style={[styles.tipBox, { borderColor: riskColor }]}>
             <Text style={{ color: riskColor }}>{tipText}</Text>
           </View>

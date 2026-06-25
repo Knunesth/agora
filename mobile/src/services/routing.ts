@@ -48,7 +48,7 @@ export async function getSafeRoutes(
       }));
 
       // Calcular o score de risco dessa rota específica
-      const { score, zonesIntercepted } = calculateRouteRiskScore(coords, zones);
+      const { score } = calculateRouteRiskScore(coords, zones);
 
       return {
         coordinates: coords,

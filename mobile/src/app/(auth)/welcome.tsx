@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, Text as RNText } from 'react-native';
+import { View, StyleSheet, Image, Text as RNText } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui';
@@ -20,7 +20,7 @@ export default function WelcomeScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.content}>
 
-        {/* Logo + Brand */}
+        {}
         <View style={styles.logoContainer}>
           <Image
             source={require('@/assets/images/logo-transparent.png')}
@@ -31,14 +31,14 @@ export default function WelcomeScreen() {
           <RNText style={styles.slogan}>Sua segurança em primeiro lugar.</RNText>
         </View>
 
-        {/* Descrição */}
+        {}
         <View style={styles.textContainer}>
           <RNText style={styles.descText}>
             {'Cidadãos protegendo cidadãos.\nReceba alertas em tempo real e ajude\na tornar sua região mais segura.'}
           </RNText>
         </View>
 
-        {/* Botões */}
+        {}
         <View style={styles.actionContainer}>
           <Button
             title="ENTRAR  →"
@@ -56,7 +56,7 @@ export default function WelcomeScreen() {
           />
         </View>
 
-        {/* Termos */}
+        {}
         <RNText style={styles.terms}>
           {'Ao continuar, você aceita nossos Termos e Política de Privacidade.'}
         </RNText>

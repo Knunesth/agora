@@ -43,7 +43,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
           setPrefs(JSON.parse(stored));
         }
       } catch (e) {
-        console.error('Failed to load accessibility preferences', e);
+
       } finally {
         setIsLoaded(true);
       }
@@ -53,9 +53,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isLoaded) {
-      AsyncStorage.setItem(ASYNC_STORAGE_KEY, JSON.stringify(prefs)).catch((e) =>
-        console.error('Failed to save accessibility preferences', e)
-      );
+      AsyncStorage.setItem(ASYNC_STORAGE_KEY, JSON.stringify(prefs)).catch(() => {});
     }
   }, [prefs, isLoaded]);
 

@@ -60,7 +60,7 @@ export default function PrivacyScreen() {
         setShowToGuardians(data.notification_preferences?.sos_network ?? true);
       }
     } catch (err) {
-      console.error(err);
+
     } finally {
       setIsLoading(false);
     }
@@ -222,7 +222,7 @@ export default function PrivacyScreen() {
   const executeDeleteAccount = async () => {
     setIsDeleting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('delete-account');
+      const { error } = await supabase.functions.invoke('delete-account');
       if (error) throw error;
 
       await supabase.auth.signOut();
@@ -253,7 +253,7 @@ export default function PrivacyScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         
-        {/* VISIBILIDADE DO PERFIL */}
+        {}
         <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>VISIBILIDADE DO PERFIL</Text>
         <View style={styles.card}>
           <View style={styles.row}>
@@ -280,7 +280,7 @@ export default function PrivacyScreen() {
           </View>
         </View>
 
-        {/* SEGURANÇA DA CONTA */}
+        {}
         <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>SEGURANÇA DA CONTA</Text>
         <View style={styles.card}>
           <TouchableOpacity style={styles.rowItem} onPress={() => setPasswordModalVisible(true)}>
@@ -296,7 +296,7 @@ export default function PrivacyScreen() {
           </View>
         </View>
 
-        {/* DADOS E PRIVACIDADE */}
+        {}
         <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>DADOS E PRIVACIDADE</Text>
         <View style={styles.card}>
           <View style={styles.row}>
@@ -325,7 +325,7 @@ export default function PrivacyScreen() {
           </View>
         </View>
 
-        {/* DADOS DA CONTA */}
+        {}
         <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>DADOS DA CONTA</Text>
         <View style={styles.card}>
           <Button 
@@ -338,7 +338,7 @@ export default function PrivacyScreen() {
         </View>
       </ScrollView>
 
-      {/* Bottom Sheet Modal: Change Password */}
+      {}
       <Modal
         visible={passwordModalVisible}
         transparent

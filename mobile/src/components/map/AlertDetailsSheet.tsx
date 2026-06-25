@@ -6,9 +6,9 @@
  */
 
 import { forwardRef, useMemo, useEffect, useState } from 'react';
-import { View, StyleSheet, Image, ActivityIndicator, Alert as RNAlert, Platform } from 'react-native';
-import BottomSheet, { BottomSheetView, BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
-import { ThumbsUp, ThumbsDown, ShieldAlert, CheckCircle, Clock, MapPin } from 'lucide-react-native';
+import { View, StyleSheet, Image, Alert as RNAlert, Platform } from 'react-native';
+import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { ShieldAlert, CheckCircle, Clock, MapPin } from 'lucide-react-native';
 import * as Location from 'expo-location';
 
 import { Text, Button } from '@/components/ui';
@@ -108,7 +108,7 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
       >
         <BottomSheetScrollView contentContainerStyle={styles.contentContainer}>
           
-          {/* Header Visual */}
+          {}
           <View style={styles.headerRow}>
             {isVerified ? (
               <View style={[styles.statusBadge, { backgroundColor: colors.primary }]}>
@@ -135,7 +135,7 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
             {alert.description}
           </Text>
 
-          {/* Localidade */}
+          {}
           <View style={styles.locationRow}>
             <MapPin size={14} color={colors.primary} />
             <Text variant="bodySmall" color={colors.textSecondary} style={{ flex: 1, marginLeft: 6 }}>
@@ -144,7 +144,7 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
             </Text>
           </View>
 
-          {/* Foto (Evidência) */}
+          {}
           {alert.photoUrl ? (
             <Image source={{ uri: alert.photoUrl }} style={styles.evidenceImage} />
           ) : (
@@ -154,7 +154,7 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
             </View>
           )}
 
-          {/* Seção de Consenso (Votação) */}
+          {}
           <View style={styles.consensusSection}>
             <Text variant="h3" align="center">Consenso da Comunidade</Text>
             <Text variant="bodySmall" align="center" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
@@ -174,7 +174,7 @@ export const AlertDetailsSheet = forwardRef<BottomSheet, AlertDetailsSheetProps>
                   onPress={handleDeleteAlert} 
                   disabled={isDeleting || isVoting}
                   style={{ borderColor: colors.danger, borderWidth: 1 }}
-                  textStyle={{ color: colors.danger }}
+                  labelColor={colors.danger}
                 />
               </View>
             ) : isVerified ? (

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Linking, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, MapPin, Navigation, Crosshair } from 'lucide-react-native';
+import { ChevronLeft, MapPin, Navigation } from 'lucide-react-native';
 import * as Location from 'expo-location';
 import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';

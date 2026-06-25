@@ -38,7 +38,7 @@ export function AlertMarker({ alert, onPress }: AlertMarkerProps) {
       tracksViewChanges={false} // Performance optimization
     >
       <View style={styles.container}>
-        {/* RN-01: Quarentena visual (Halo amarelo para não verificados) */}
+        {}
         {isPending && (
           <View style={[styles.halo, { borderColor: colors.warning }]} />
         )}

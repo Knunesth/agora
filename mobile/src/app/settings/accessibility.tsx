@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Linking, Switch, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Switch, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
@@ -38,7 +38,7 @@ export default function AccessibilityScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         
-        {/* Texto Scale */}
+        {}
         <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>TAMANHO DO TEXTO</Text>
         <View style={styles.card}>
           <View style={styles.scaleRow}>

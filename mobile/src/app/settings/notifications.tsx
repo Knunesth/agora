@@ -33,12 +33,26 @@ export default function NotificationsScreen() {
     }
   };
 
-  const savePreferences = async (newPrefs: any) => {
-    Alert.alert(
-      'Em breve', 
-      'Esta funcionalidade estará disponível na próxima versão do Ágora.',
-      [{ text: 'OK' }]
-    );
+  const savePreferences = async (newPrefs: Record<string, boolean>) => {
+    if (!user) return;
+
+    // Mescla com o estado atual (evita sobrescrever outras chaves)
+    const merged = {
+      alerts_nearby: alertsNearby,
+      confirmations,
+      sos_network: sosNetwork,
+      agora_news: news,
+      ...newPrefs,
+    };
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({ notification_preferences: merged })
+      .eq('id', user.id);
+
+    if (error) {
+      Alert.alert('Erro', 'Não foi possível salvar as preferências. Tente novamente.');
+    }
   };
 
   return (

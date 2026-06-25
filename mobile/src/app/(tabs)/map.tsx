@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert as RNAlert, Linking, Platform } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert as RNAlert, Linking, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Plus, Menu, Triangle, Search, Mic, Home, Briefcase, Clock, MapPin, Navigation, Map as MapIcon, Bike, Car, Crosshair } from 'lucide-react-native';
 import MapView from 'react-native-maps';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
-import BottomSheet, { BottomSheetView, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Circle, Marker, Polyline } from '@/components/map/MapElements';
 import { GestureHandlerRootView, ScrollView as GHScrollView } from 'react-native-gesture-handler';
 
@@ -18,9 +17,6 @@ import { AlertDetailsSheet } from '@/components/map/AlertDetailsSheet';
 import { Alert } from '@/types';
 import { useLocation, DEFAULT_LOCATION } from '@/hooks/useLocation';
 import { useAlerts } from '@/hooks/useAlerts';
-import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
-import { supabase } from '@/services/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMenu } from '@/contexts/MenuContext';
 
@@ -45,9 +41,9 @@ export default function MapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { location, loading: locLoading, errorMsg: locError } = useLocation();
+  const { location } = useLocation();
   const centerLocation = location || DEFAULT_LOCATION;
-  const { alerts, loading: alertsLoading, errorMsg: dbError, refetch } = useAlerts(location);
+  const { alerts, refetch } = useAlerts(location);
 
   // Estados de Rota
   const [riskZones, setRiskZones] = useState<RiskZone[]>([]);
@@ -256,12 +252,11 @@ export default function MapScreen() {
     });
   };
 
-  const handleSOS = async () => { /* Mantido do original */ };
   const handleMarkerPress = (alert: Alert) => {
     setSelectedAlert(alert);
     alertSheetRef.current?.expand();
   };
-  const handleVote = async (vote_type: 'confirm' | 'reject') => { /* Mantido */ };
+  const handleVote = async () => {  };
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -276,7 +271,7 @@ export default function MapScreen() {
           }}
           showsUserLocation={false} 
         >
-          {/* Mancha vermelha de risco local */}
+          {}
           {!routes.length && (
             <Circle
               center={centerLocation}
@@ -286,10 +281,10 @@ export default function MapScreen() {
             />
           )}
 
-          {/* Marcador customizado do usuário — ponto azul estilo iOS */}
+          {}
           {location && (
             <>
-              {/* Halo de precisão */}
+              {}
               <Circle
                 center={location}
                 radius={50}
@@ -297,19 +292,19 @@ export default function MapScreen() {
                 strokeColor="rgba(0, 122, 255, 0.3)"
                 strokeWidth={1}
               />
-              {/* Ponto azul */}
+              {}
               <Marker coordinate={location} anchor={{ x: 0.5, y: 0.5 }} flat={true}>
                 <View style={styles.userDot} />
               </Marker>
             </>
           )}
 
-          {/* Alertas padrão */}
+          {}
           {!routes.length && filteredAlerts.map((alert) => (
             <AlertMarker key={alert.id} alert={alert} onPress={handleMarkerPress} />
           ))}
 
-          {/* Zonas de Perigo (exibidas durante rota) */}
+          {}
           {routes.length > 0 && riskZones.map((z, i) => (
             <Circle
               key={`zone-${i}`}
@@ -320,7 +315,7 @@ export default function MapScreen() {
             />
           ))}
 
-          {/* Rotas */}
+          {}
           {routes.slice().reverse().map((r, i) => (
             <Polyline
               key={`route-${i}`}
@@ -332,7 +327,7 @@ export default function MapScreen() {
             />
           ))}
 
-          {/* Pino de Destino */}
+          {}
           {destination && (
             <Marker coordinate={destination.coordinate} anchor={{ x: 0.5, y: 1 }}>
               <View style={styles.destinationPinWrapper}>
@@ -345,7 +340,7 @@ export default function MapScreen() {
         </AgoraMap>
       </View>
 
-      {/* HEADER FLUTUANTE */}
+      {}
       <View style={[styles.header, { top: Math.max(insets.top, 20) }]}>
         <TouchableOpacity style={styles.menuBtn} onPress={openMenu}>
           <Menu color="#FFF" size={24} />
@@ -358,7 +353,7 @@ export default function MapScreen() {
         )}
       </View>
 
-      {/* Botão de centralizar na localização */}
+      {}
       <TouchableOpacity
         style={[styles.centerBtn, { top: Math.max(insets.top, 20) + 56 }]}
         onPress={centerOnUser}
@@ -367,7 +362,7 @@ export default function MapScreen() {
         <Crosshair size={22} color={location ? '#00C853' : '#555'} />
       </TouchableOpacity>
 
-      {/* Card de Resumo de Rota (Se houver rota ativa) */}
+      {}
       {routes.length > 0 && (
         <View style={[styles.routeSummaryCard, { bottom: Math.max(insets.bottom, 24) + 105 }]}>
           <View style={styles.routeSummaryHeader}>
@@ -393,7 +388,7 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* BOTTOM SHEET ARRASTÁVEL (Busca e Menu) */}
+      {}
       <BottomSheet
         ref={mapPanelRef}
         index={0}
@@ -408,7 +403,7 @@ export default function MapScreen() {
           contentContainerStyle={[styles.bsContent, { paddingBottom: Math.max(insets.bottom, 24) + 95 }]}
           showsVerticalScrollIndicator={false}
         >
-          {/* Filtros */}
+          {}
           {!routes.length && (
             <GHScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
               <TouchableOpacity onPress={() => setActiveFilter('all')} style={activeFilter === 'all' ? styles.chipActive : styles.chip}>
@@ -429,7 +424,7 @@ export default function MapScreen() {
             </GHScrollView>
           )}
 
-          {/* Busca */}
+          {}
           <View style={styles.searchContainer}>
             <Search color="#999" size={20} />
             <TextInput
@@ -448,7 +443,7 @@ export default function MapScreen() {
             )}
           </View>
 
-          {/* Sugestões */}
+          {}
           {suggestions.length > 0 && (
             <View style={styles.suggestionsList}>
               {suggestions.map((sug, i) => (
@@ -460,7 +455,7 @@ export default function MapScreen() {
             </View>
           )}
 
-          {/* Atalhos ou Modo de Transporte */}
+          {}
           {!destination ? (
             <View style={styles.destinationsContainer}>
               <TouchableOpacity 
@@ -518,7 +513,7 @@ export default function MapScreen() {
             </View>
           )}
 
-          {/* Pesquisas recentes */}
+          {}
           {!routes.length && (
             <View style={{ marginTop: 20 }}>
               <Text style={styles.recentTitle}>Pesquisas recentes</Text>

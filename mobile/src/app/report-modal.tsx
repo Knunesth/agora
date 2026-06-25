@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Image, TextInput, ActivityIndicator
 import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
-import { ChevronLeft, Shield, Info, MapPin, Camera as CameraIcon, RotateCcw, X, Search } from 'lucide-react-native';
+import { ChevronLeft, Shield, Info, MapPin, Camera as CameraIcon, X, Search } from 'lucide-react-native';
 
 import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
@@ -16,6 +16,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AgoraMap } from '@/components/map/AgoraMap';
 import { Marker } from '@/components/map/MapElements';
 import { classifyAlert } from '@/services/groq';
+import { alertQueue } from '@/services/alertQueue';
+import NetInfo from '@react-native-community/netinfo';
 
 const CATEGORIES: { id: RiskCategory; label: string; icon: string }[] = [
   { id: 'iluminacao', label: 'Iluminação precária', icon: '🌑' },
@@ -109,7 +111,7 @@ export default function ReportModal() {
     const timer = setTimeout(async () => {
       setIsClassifying(true);
       
-      let groqTimeout: NodeJS.Timeout;
+      let groqTimeout: ReturnType<typeof setTimeout>;
       
       const groqPromise = classifyAlert(description);
       const timeoutPromise = new Promise((_, reject) => {
@@ -188,7 +190,7 @@ export default function ReportModal() {
     if (!photoUri) {
       RNAlert.alert('Aviso', 'Anexar uma evidência fotográfica é recomendável para este alerta.', [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Enviar sem foto', onPress: proceedSubmit }
+        { text: 'Enviar sem foto', onPress: () => proceedSubmit() }
       ]);
       return;
     }
@@ -202,6 +204,34 @@ export default function ReportModal() {
     }
     if (!selectedLocation) {
       RNAlert.alert('Erro', 'Aguarde o sinal de GPS ou escolha o local no mapa.');
+      return;
+    }
+
+    // Verifica conexão no momento do submit
+    const networkState = await NetInfo.fetch();
+    const hasConnection = networkState.isConnected && networkState.isInternetReachable;
+
+    if (!hasConnection) {
+      // Sem internet — salva na queue local
+      if (!user) {
+        RNAlert.alert('Erro', 'Você precisa estar logado para reportar.');
+        return;
+      }
+
+      await alertQueue.enqueue({
+        category: selectedCategory ?? category,
+        description,
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude,
+        photoUri: photoUri,           // URI local — será uploadada quando tiver internet
+        userId: user.id,
+      });
+
+      RNAlert.alert(
+        '📶 Sem conexão',
+        'Seu alerta foi salvo e será enviado automaticamente quando você tiver internet.',
+        [{ text: 'OK', onPress: () => router.canGoBack() ? router.back() : router.replace('/(tabs)') }]
+      );
       return;
     }
 
@@ -318,7 +348,7 @@ export default function ReportModal() {
               <X color="#FFF" size={24} />
             </TouchableOpacity>
           </View>
-          {/* Campo de busca de endereço */}
+          {}
           <View style={styles.mapSearchRow}>
             <TextInput
               style={styles.mapSearchInput}
@@ -379,14 +409,14 @@ export default function ReportModal() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header Banner */}
+        {}
         <View style={styles.headerBanner}>
           <Shield color={colors.primary} size={24} style={{ marginBottom: 12 }} />
           <Text style={styles.bannerTitle}>Alertas da sua{'\n'}região</Text>
           <Text style={styles.bannerSubtitle}>Seja os olhos da sua cidade — sua denúncia pode salvar vidas.</Text>
         </View>
 
-        {/* Title */}
+        {}
         <View style={styles.titleRow}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack} disabled={isSubmitting}>
             <ChevronLeft color={colors.textPrimary} size={24} />
@@ -394,7 +424,7 @@ export default function ReportModal() {
           <Text variant="h3" style={{ marginLeft: 16 }}>Registrar novo alerta</Text>
         </View>
 
-        {/* Description (Smart Input) */}
+        {}
         <Text style={styles.sectionLabel}>DESCREVA O QUE VOCÊ VIU</Text>
         <TextInput
           style={styles.textArea}
@@ -407,7 +437,7 @@ export default function ReportModal() {
           maxLength={200}
         />
 
-        {/* Indicador de classificação */}
+        {}
         {isClassifying && (
           <View style={styles.classifyingBadge}>
             <ActivityIndicator size="small" color={colors.primary} />
@@ -415,7 +445,7 @@ export default function ReportModal() {
           </View>
         )}
         
-        {/* Sugestão da IA */}
+        {}
         {suggestedCategory && !isClassifying && (
           <View style={styles.suggestionCard}>
             <Text style={styles.suggestionLabel}>✨ Sugestão do Ágora (Grok IA)</Text>
@@ -444,7 +474,7 @@ export default function ReportModal() {
           </View>
         )}
 
-        {/* Category Selection (Manual Fallback) */}
+        {}
         {(!suggestedCategory || selectedCategory === null) && (
           <>
             <Text style={styles.sectionLabel}>OU ESCOLHA A OCORRÊNCIA</Text>
@@ -469,7 +499,7 @@ export default function ReportModal() {
           </>
         )}
 
-        {/* Info Box */}
+        {}
         {category === 'iluminacao' && (
           <View style={styles.infoBox}>
             <Info color="#448AFF" size={20} style={{ marginRight: 12, marginTop: 2 }} />
@@ -477,7 +507,7 @@ export default function ReportModal() {
           </View>
         )}
 
-        {/* Location */}
+        {}
         <Text style={styles.sectionLabel}>LOCALIZAÇÃO</Text>
         <View style={styles.locationBox}>
           <MapPin color={colors.primary} size={20} style={{ marginRight: 12 }} />
@@ -495,7 +525,7 @@ export default function ReportModal() {
           )}
         </View>
 
-        {/* Evidence */}
+        {}
         <Text style={styles.sectionLabel}>ANEXAR EVIDÊNCIA</Text>
         <View style={styles.evidenceRow}>
           {photoUri ? (

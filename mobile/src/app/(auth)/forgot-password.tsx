@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ShieldCheck, Mail, Info } from 'lucide-react-native';
+import { ChevronLeft, Mail, Info } from 'lucide-react-native';
 import { Text, Button, Input } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -41,14 +41,14 @@ export default function ForgotPasswordScreen() {
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <ChevronLeft color={colors.textPrimary} size={24} />
           </TouchableOpacity>
         </View>
 
-        {/* Logo */}
+        {}
         <View style={styles.logoContainer}>
           <Image
             source={require('@/assets/images/logo-transparent.png')}
@@ -58,7 +58,7 @@ export default function ForgotPasswordScreen() {
           <Text variant="h2" style={styles.brandName}>Ágora</Text>
         </View>
 
-        {/* Titles */}
+        {}
         <View style={styles.titleSection}>
           <Text variant="h2" style={styles.title}>Recuperar senha</Text>
           <Text variant="body" color={colors.textSecondary}>
@@ -66,7 +66,7 @@ export default function ForgotPasswordScreen() {
           </Text>
         </View>
 
-        {/* Form */}
+        {}
         <View style={styles.form}>
           <Input
             placeholder="gaby@exemplo.com"
@@ -85,7 +85,7 @@ export default function ForgotPasswordScreen() {
             style={styles.submitButton}
           />
 
-          {/* Spam Alert Card */}
+          {}
           <View style={styles.alertCard}>
             <Info color={colors.textSecondary} size={16} />
             <Text variant="caption" color={colors.textSecondary} style={styles.alertText}>
@@ -96,7 +96,7 @@ export default function ForgotPasswordScreen() {
 
         <View style={{ flex: 1 }} />
 
-        {/* Footer */}
+        {}
         <View style={styles.footer}>
           <Text variant="bodySmall" color={colors.textSecondary}>Lembrou da senha? </Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/login')}>

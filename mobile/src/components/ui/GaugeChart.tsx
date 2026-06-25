@@ -53,7 +53,7 @@ export function GaugeChart({ level, size = 200 }: GaugeChartProps) {
 
   return (
     <Svg width={size} height={svgHeight} viewBox="0 0 200 110">
-      {/* Background track */}
+      {}
       <Path
         d={arcPath(180, 0)}
         fill="none"
@@ -61,14 +61,14 @@ export function GaugeChart({ level, size = 200 }: GaugeChartProps) {
         strokeWidth={18}
         strokeLinecap="butt"
       />
-      {/* Green section */}
+      {}
       <Path d={GREEN_PATH}  fill="none" stroke="#00C853" strokeWidth={18} strokeLinecap="butt" />
-      {/* Yellow section */}
+      {}
       <Path d={YELLOW_PATH} fill="none" stroke="#FFD600" strokeWidth={18} strokeLinecap="butt" />
-      {/* Red section */}
+      {}
       <Path d={RED_PATH}    fill="none" stroke="#FF1744" strokeWidth={18} strokeLinecap="butt" />
 
-      {/* Needle */}
+      {}
       <Line
         x1={CX} y1={CY}
         x2={needleTip.x.toFixed(2)} y2={needleTip.y.toFixed(2)}
@@ -76,7 +76,7 @@ export function GaugeChart({ level, size = 200 }: GaugeChartProps) {
         strokeWidth={3}
         strokeLinecap="round"
       />
-      {/* Center circle */}
+      {}
       <Circle cx={CX} cy={CY} r={8}  fill="#1E1E1E" />
       <Circle cx={CX} cy={CY} r={5}  fill="#FFFFFF" />
     </Svg>

@@ -51,7 +51,7 @@ export default function SOSConfirmModalScreen() {
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('sos-alert', {
-        body: { location: userLocation, user_id: user.id }
+        body: { location: userLocation },
       });
       
       if (error) throw error;
@@ -62,7 +62,7 @@ export default function SOSConfirmModalScreen() {
         tracking_url: data.tracking_url ?? ''
       });
     } catch (error) {
-      console.error('SOS error:', error);
+
       // Nenhuma menção a 190. Mantendo foco na rede privada.
       alert('Não foi possível acionar a rede. Verifique sua conexão e tente novamente.');
       setIsSubmitting(false);
@@ -76,7 +76,7 @@ export default function SOSConfirmModalScreen() {
         message: `Preciso de ajuda! Acompanhe minha localização em tempo real: ${successData.tracking_url}`,
       });
     } catch (error) {
-      console.error(error);
+
     }
   };
 

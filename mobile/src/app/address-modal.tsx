@@ -40,7 +40,7 @@ export default function AddressModalScreen() {
       const data = await response.json();
       setResults(data);
     } catch (error) {
-      console.error(error);
+
     } finally {
       setIsSearching(false);
     }
@@ -69,7 +69,7 @@ export default function AddressModalScreen() {
       
       setIsSuccess(true);
     } catch (error) {
-      console.error(error);
+
       alert('Erro ao salvar endereço.');
     } finally {
       setIsSaving(false);

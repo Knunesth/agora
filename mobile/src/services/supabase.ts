@@ -21,9 +21,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Dummy storage para evitar crash no ambiente Server Side (SSR) do Expo Web (onde window é undefined)
 const DummyStorage = {
-  getItem: (key: string) => Promise.resolve(null),
-  setItem: (key: string, value: string) => Promise.resolve(),
-  removeItem: (key: string) => Promise.resolve(),
+  getItem: () => Promise.resolve(null),
+  setItem: () => Promise.resolve(),
+  removeItem: () => Promise.resolve(),
 };
 
 const appStorage = Platform.OS === 'web' && typeof window === 'undefined' 

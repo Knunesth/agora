@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, TextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Camera } from 'lucide-react-native';
@@ -75,7 +75,7 @@ export default function EditProfileScreen() {
         }
       }
     } catch (err) {
-      console.error(err);
+
     } finally {
       setLoading(false);
     }
@@ -240,18 +240,6 @@ export default function EditProfileScreen() {
   );
 }
 
-const webDateStyle = {
-  backgroundColor: '#1A1A1A',
-  borderColor: colors.surfaceBorder,
-  borderWidth: 1,
-  borderRadius: 8,
-  color: colors.textPrimary,
-  padding: 12,
-  fontSize: 16,
-  outline: 'none',
-  width: '100%',
-  fontFamily: 'sans-serif'
-};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0D0D0D' },

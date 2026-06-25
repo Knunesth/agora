@@ -1,8 +1,13 @@
 // supabase/functions/classify-alert/index.ts
 // Edge Function — Classificação de alertas com Groq (LLaMA 3.1)
-// A chave fica em: npx supabase secrets set GROQ_API_KEY=...
+//
+// ⚠️  ANTES DO DEPLOY: configure a chave da API Groq como secret do servidor:
+//     npx supabase secrets set GROQ_API_KEY=gsk_...
+//     Nunca use EXPO_PUBLIC_GROQ_API_KEY — variáveis EXPO_PUBLIC são embutidas
+//     no bundle do app e podem ser extraídas por qualquer pessoa.
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const CORS_HEADERS = {
@@ -16,6 +21,30 @@ serve(async (req) => {
     return new Response(null, { headers: CORS_HEADERS });
   }
 
+  // ── Autenticação JWT ───────────────────────────────────────────────────────
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: authHeader } } }
+  );
+
+  const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+  if (userError || !user) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // ── Lógica principal ───────────────────────────────────────────────────────
   try {
     const { description } = await req.json();
 
@@ -27,9 +56,9 @@ serve(async (req) => {
     }
 
     const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
-    if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY não configurada');
+    if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY não configurada — rode: npx supabase secrets set GROQ_API_KEY=gsk_...');
 
-    const grokResponse = await fetch(GROQ_API_URL, {
+    const groqResponse = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -66,25 +95,25 @@ Formato de resposta obrigatório:
       }),
     });
 
-    if (!grokResponse.ok) {
-      const err = await grokResponse.text();
-      throw new Error(`Grok API error: ${grokResponse.status} — ${err}`);
+    if (!groqResponse.ok) {
+      const err = await groqResponse.text();
+      throw new Error(`Groq API error: ${groqResponse.status} — ${err}`);
     }
 
-    const grokData = await grokResponse.json();
-    const content = grokData.choices?.[0]?.message?.content ?? '';
+    const groqData = await groqResponse.json();
+    const content: string = groqData.choices?.[0]?.message?.content ?? '';
 
     // Extrai o JSON da resposta (pode vir com texto extra em alguns modelos)
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
 
-    if (!parsed?.category) throw new Error('Resposta inválida do Grok');
+    if (!parsed?.category) throw new Error('Resposta inválida do Groq');
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     });
-  } catch (err: any) {
-    console.error('[classify-alert]', err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro desconhecido';
     // Retorna "outro" como fallback — nunca quebra o fluxo do app
     return new Response(
       JSON.stringify({

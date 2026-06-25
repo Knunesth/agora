@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
-import { ChevronLeft, AlertTriangle, MapPin, Clock, Flame, Users } from 'lucide-react-native';
+import { ChevronLeft, AlertTriangle, MapPin, Clock, Flame } from 'lucide-react-native';
 import { Text, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing, borderRadius } from '@/theme/spacing';
@@ -153,7 +153,7 @@ export default function AlertDetailsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <ChevronLeft color={colors.textPrimary} size={24} />
@@ -164,7 +164,7 @@ export default function AlertDetailsScreen() {
         </View>
 
         <View style={styles.content}>
-          {/* Ícone e categoria */}
+          {}
           <View style={styles.categoryRow}>
             <View style={styles.categoryIcon}>
               <AlertTriangle color={colors.warning} size={32} />
@@ -177,7 +177,7 @@ export default function AlertDetailsScreen() {
             </View>
           </View>
 
-          {/* Meta */}
+          {}
           <View style={styles.metaGrid}>
             <View style={styles.metaItem}>
               <MapPin color={colors.textMuted} size={16} />
@@ -199,7 +199,7 @@ export default function AlertDetailsScreen() {
             </View>
           </View>
 
-          {/* Barra de Consenso */}
+          {}
           <View style={styles.consensusCard}>
             <View style={styles.consensusHeader}>
               <Text variant="bodySmall" style={{ color: colors.textPrimary, fontWeight: '600' }}>
@@ -215,7 +215,7 @@ export default function AlertDetailsScreen() {
             </Text>
           </View>
 
-          {/* Descrição */}
+          {}
           <View style={styles.descriptionCard}>
             <Text variant="overline" color={colors.textMuted} style={{ marginBottom: spacing.sm }}>
               DESCRIÇÃO
@@ -230,7 +230,7 @@ export default function AlertDetailsScreen() {
               </Text>
             )}
             
-            {/* Foto da evidência */}
+            {}
             {alert.photoUrl && (
               <View style={{ marginTop: spacing.md }}>
                 <Text variant="overline" color={colors.textMuted} style={{ marginBottom: spacing.sm }}>
@@ -245,7 +245,7 @@ export default function AlertDetailsScreen() {
             )}
           </View>
 
-          {/* Votação */}
+          {}
           {!isVerified && !isOwnAlert && (
             <View style={styles.voteSection}>
               <Text variant="bodySmall" style={styles.voteQuestion}>

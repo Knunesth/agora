@@ -1,8 +1,6 @@
 // mobile/src/components/map/AgoraMap.tsx
-// ─────────────────────────────────────────────────────────────
 // Componente de mapa do Ágora
 // Usa OSM por padrão; troca para Google Maps se a API key estiver no .env
-// ─────────────────────────────────────────────────────────────
 
 import React, { forwardRef } from 'react';
 import MapView, { UrlTile, MapViewProps } from 'react-native-maps';
@@ -35,7 +33,7 @@ export const AgoraMap = forwardRef<MapView, AgoraMapProps>(
         showsIndoors={false}
         {...props}
       >
-        {/* Tiles escuros do OSM — só renderiza quando Google Maps não está ativo */}
+        {}
         {!IS_GOOGLE_MAPS && (
           <UrlTile
             urlTemplate={OSM_DARK_TILE_URL}

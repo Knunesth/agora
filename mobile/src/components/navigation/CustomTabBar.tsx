@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text as RNText, Platform, Alert, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LongPressGestureHandler, State } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -15,7 +14,6 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Home, Map, Bell, User } from 'lucide-react-native';
-import { supabase } from '@/services/supabase';
 import { useLocation } from '@/hooks/useLocation';
 
 const TAB_CONFIG: Record<string, { icon: React.FC<any>; label: string }> = {
@@ -83,7 +81,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           <IconComp color={color} size={24} strokeWidth={isFocused ? 2.5 : 2} />
         </View>
         <RNText style={[styles.tabLabel, { color }]}>{cfg.label}</RNText>
-        {/* Linha sublinhada verde fina da tab ativa */}
+        {}
         <View style={[styles.activeUnderline, { opacity: isFocused ? 1 : 0 }]} />
       </TouchableOpacity>
     );
@@ -92,34 +90,34 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   return (
     <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 16) }]} pointerEvents="box-none">
       
-      {/* Pílula flutuante */}
+      {}
       <View style={styles.pillContainer}>
         
-        {/* Lado esquerdo */}
+        {}
         <View style={styles.side}>
           {leftRoutes.map(renderTab)}
         </View>
 
-        {/* Espaçamento central para o SOS */}
+        {}
         <View style={styles.centerSpace} />
 
-        {/* Lado direito */}
+        {}
         <View style={styles.side}>
           {rightRoutes.map(renderTab)}
         </View>
 
       </View>
 
-      {/* Botão SOS — Posicionamento Absoluto saindo da tab bar */}
+      {}
       <View style={[styles.sosContainer, { bottom: Math.max(insets.bottom, 16) + 12 }]} pointerEvents="box-none">
         
-        {/* Efeito Glow Difuso Pulsante */}
+        {}
         <Animated.View style={[styles.glowWrapper, animatedGlow]} pointerEvents="none">
           <View style={styles.glowOuter} />
           <View style={styles.glowInner} />
         </Animated.View>
 
-        {/* Botão Físico SOS */}
+        {}
         <Pressable
           onPressIn={() => {
             sosScale.value = withTiming(0.85, { duration: 800 });
@@ -144,7 +142,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
               end={{ x: 0.8, y: 1 }}
               style={styles.sosButtonInner}
             >
-              {/* Efeito 3D Highlight no topo */}
+              {}
               <View style={styles.sosHighlight} />
               
               <View style={styles.sosTextWrapper}>
@@ -226,9 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
 
-  /* -------------------------------
-     BOTÃO SOS - DETALHES CIRÚRGICOS
-     ------------------------------- */
+  
   sosContainer: {
     position: 'absolute',
     left: '50%',

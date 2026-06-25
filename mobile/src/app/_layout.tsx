@@ -22,10 +22,22 @@ import {
   Inter_800ExtraBold,
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import { colors } from '@/theme/colors';
 
 // Impedir que a splash feche antes das fontes carregarem
 SplashScreen.preventAutoHideAsync();
+
+// Handler global — define como notificações se comportam quando o app está em foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 import { useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import * as Linking from 'expo-linking';
@@ -33,12 +45,49 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext';
 import { supabase } from '@/services/supabase';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import NetInfo from '@react-native-community/netinfo';
+import { alertQueue } from '@/services/alertQueue';
+import { Alert as RNAlert } from 'react-native';
 
 function RouteGuard() {
   const { session, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const rootNavigationState = useRootNavigationState();
+
+  // Processar queue automaticamente
+  useEffect(() => {
+    let wasOffline = false;
+
+    const unsubscribe = NetInfo.addEventListener(async state => {
+      const online = state.isConnected && state.isInternetReachable;
+
+      if (online && wasOffline) {
+        // Voltou a ter internet — processa a queue silenciosamente
+        const count = await alertQueue.count();
+        if (count > 0) {
+          const result = await alertQueue.process();
+          if (result.sent > 0) {
+            // Notifica o usuário que os alertas pendentes foram enviados
+            setTimeout(() => {
+              RNAlert.alert(
+                '✅ Alertas enviados',
+                `${result.sent} alerta${result.sent > 1 ? 's' : ''} pendente${result.sent > 1 ? 's' : ''} foram enviados com sucesso.`
+              );
+            }, 1000);
+          }
+        }
+      }
+
+      wasOffline = !online;
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Registra o dispositivo para push notifications após o usuário estar autenticado
+  usePushNotifications();
 
   useEffect(() => {
     // Só prossegue se a autenticação já carregou e o roteador estiver montado
@@ -47,11 +96,11 @@ function RouteGuard() {
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!session && !inAuthGroup) {
-      console.log('[RouteGuard] Redirecting to login: no session and not in auth group');
+
       router.replace('/(auth)/login');
     } else if (session && inAuthGroup) {
       // Com sessão -> redirecionar para as abas (admins e usuários comuns)
-      console.log('[RouteGuard] Authenticated in auth group. Redirecting to /(tabs)');
+
       router.replace('/(tabs)');
     }
   }, [session, isLoading, segments, rootNavigationState]);
@@ -81,7 +130,7 @@ function RouteGuard() {
           }
         }
       } catch (e) {
-        console.error('[DeepLink Error]', e);
+
       }
     };
 

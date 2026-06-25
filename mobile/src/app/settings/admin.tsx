@@ -45,7 +45,7 @@ export default function AdminScreen() {
         verifiedToday: verifiedToday || 0,
       });
     } catch (err) {
-      console.error(err);
+
     } finally {
       setLoading(false);
     }

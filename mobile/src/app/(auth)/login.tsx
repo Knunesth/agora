@@ -6,7 +6,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, KeyboardAvoidingView,
-  Platform, Alert, Image, Text as RNText, ScrollView,
+  Platform, Image, Text as RNText, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -54,7 +54,7 @@ export default function LoginScreen() {
         }
       }
     } catch (err) {
-      console.error(err);
+
       setErrorMsg('Ocorreu um erro inesperado.');
     } finally {
       isLoadingRef.current = false;
@@ -76,7 +76,7 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Header ─────────────────────────────────────────────── */}
+          {}
           <View style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
               <ChevronLeft color={colors.textPrimary} size={24} />
@@ -94,7 +94,7 @@ export default function LoginScreen() {
             <View style={{ width: 40 }} />
           </View>
 
-          {/* ── Títulos ────────────────────────────────────────────── */}
+          {}
           <View style={styles.titleSection}>
             <RNText style={styles.welcomeTitle}>Bem-vindo(a) de volta</RNText>
             <RNText style={styles.welcomeSubtitle}>Entre na sua conta para continuar.</RNText>
@@ -106,7 +106,7 @@ export default function LoginScreen() {
             ) : null}
           </View>
 
-          {/* ── Formulário ─────────────────────────────────────────── */}
+          {}
           <View style={styles.form}>
             <Input
               placeholder="seu@email.com"
@@ -131,7 +131,7 @@ export default function LoginScreen() {
               onIconRightPress={() => setShowPassword(!showPassword)}
             />
 
-            {/* Esqueci a senha */}
+            {}
             <TouchableOpacity
               style={styles.forgotRow}
               onPress={() => router.push('/(auth)/forgot-password')}
@@ -139,7 +139,7 @@ export default function LoginScreen() {
               <RNText style={styles.forgotText}>Esqueci a senha</RNText>
             </TouchableOpacity>
 
-            {/* Botão principal */}
+            {}
             <Button
               title={isLoading ? 'Acessando...' : 'ENTRAR'}
               variant="primary"
@@ -151,14 +151,14 @@ export default function LoginScreen() {
 
           </View>
 
-          {/* ── Divisor ────────────────────────────────────────────── */}
+          {}
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
             <RNText style={styles.dividerText}>{'OU CONTINUE COM'}</RNText>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* ── Botões Sociais ──────────────────────────────────────── */}
+          {}
           <View style={styles.socialRow}>
             <TouchableOpacity style={styles.socialButton}>
               <RNText style={styles.socialText}>{'G  Google'}</RNText>
@@ -168,7 +168,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* ── Rodapé ─────────────────────────────────────────────── */}
+          {}
           <View style={styles.footer}>
             <RNText style={styles.footerText}>{'Novo no Ágora? '}</RNText>
             <TouchableOpacity onPress={() => router.push('/(auth)/register')}>

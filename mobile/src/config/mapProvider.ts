@@ -1,11 +1,9 @@
 // mobile/src/config/mapProvider.ts
-// ─────────────────────────────────────────────────────────────
 // Provedor de mapas do Ágora
 //
 // Padrão: OpenStreetMap (gratuito, sem cartão)
 // Upgrade: Adicione EXPO_PUBLIC_GOOGLE_MAPS_API_KEY no .env
 //          para ativar o Google Maps automaticamente.
-// ─────────────────────────────────────────────────────────────
 
 import { PROVIDER_GOOGLE, PROVIDER_DEFAULT } from 'react-native-maps';
 

@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Mail, Lock, ShieldCheck, AlertTriangle } from 'lucide-react-native';
-import { Text, Button, Input } from '@/components/ui';
+import { Text } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { useAuth } from '@/contexts/AuthContext';

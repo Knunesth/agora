@@ -20,7 +20,7 @@ export default function ResolvedAlertScreen() {
       <View style={styles.content}>
         <View style={{ flex: 1 }} />
 
-        {/* Ícone */}
+        {}
         <View style={styles.iconContainer}>
           <View style={styles.iconOuter}>
             <View style={styles.iconInner}>
@@ -31,7 +31,7 @@ export default function ResolvedAlertScreen() {
           </View>
         </View>
 
-        {/* Textos */}
+        {}
         <View style={styles.textContainer}>
           <Text variant="h2" style={styles.title}>Ocorrência resolvida</Text>
           <Text variant="body" color={colors.textSecondary} style={styles.subtitle}>
@@ -39,7 +39,7 @@ export default function ResolvedAlertScreen() {
           </Text>
         </View>
 
-        {/* Card de Atualização */}
+        {}
         <View style={styles.updateCard}>
           <View style={styles.updateRow}>
             <Check color={colors.primary} size={18} />
@@ -49,7 +49,7 @@ export default function ResolvedAlertScreen() {
           </View>
         </View>
 
-        {/* Stats */}
+        {}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Users color={colors.textSecondary} size={20} />
@@ -68,7 +68,7 @@ export default function ResolvedAlertScreen() {
 
         <View style={{ flex: 1 }} />
 
-        {/* Botão */}
+        {}
         <Button
           title="Voltar para alertas"
           variant="primary"

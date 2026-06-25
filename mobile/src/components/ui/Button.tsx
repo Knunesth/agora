@@ -20,7 +20,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { colors } from '@/theme/colors';
-import { typography } from '@/theme/typography';
 import { borderRadius, spacing } from '@/theme/spacing';
 import { Text } from './Text';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
@@ -37,6 +36,8 @@ interface ButtonProps {
   loading?: boolean;
   icon?: React.ReactNode;
   style?: ViewStyle;
+  /** Sobrescreve a cor do label do botão (útil para botões secondary com cor custom) */
+  labelColor?: string;
   accessibilityHint?: string;
 }
 
@@ -51,6 +52,7 @@ export function Button({
   loading = false,
   icon,
   style,
+  labelColor,
   accessibilityHint,
 }: ButtonProps) {
   const scale = useSharedValue(1);
@@ -102,7 +104,7 @@ export function Button({
           {icon}
           <Text
             variant="label"
-            color={variantStyle.textColor}
+            color={labelColor ?? variantStyle.textColor}
             style={[icon ? { marginLeft: spacing.sm } : undefined]}
           >
             {title}

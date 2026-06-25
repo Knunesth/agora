@@ -2,7 +2,7 @@
  * Ágora — Tela de Sucesso Pós-Cadastro
  */
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet, SafeAreaView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Check } from 'lucide-react-native';
@@ -23,7 +23,7 @@ export default function SuccessScreen() {
       <View style={styles.content}>
         <View style={{ flex: 1 }} />
         
-        {/* Ícone Concêntrico de Sucesso */}
+        {}
         <View style={styles.iconContainer}>
           <View style={styles.circleOuter}>
             <View style={styles.circleInner}>
@@ -34,7 +34,7 @@ export default function SuccessScreen() {
           </View>
         </View>
 
-        {/* Textos */}
+        {}
         <View style={styles.textContainer}>
           <Text variant="h2" style={styles.title}>Tudo pronto, {userName}!</Text>
           <Text variant="body" color={colors.textSecondary} style={styles.subtitle}>
@@ -44,7 +44,7 @@ export default function SuccessScreen() {
 
         <View style={{ flex: 1 }} />
 
-        {/* Botão de Início */}
+        {}
         <Button 
           title="COMEÇAR A USAR  →" 
           variant="primary" 

@@ -9,7 +9,6 @@ import {
 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/services/supabase';
-import { typography } from '@/theme/typography';
 
 interface MenuDrawerProps {
   visible: boolean;
@@ -55,18 +54,18 @@ export function MenuDrawer({ visible, onClose }: MenuDrawerProps) {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      {/* Backdrop */}
+      {}
       <TouchableOpacity activeOpacity={1} style={styles.backdrop} onPress={onClose}>
         
-        {/* Drawer container (interrompe o clique para não fechar quando clicado dentro) */}
+        {}
         <TouchableOpacity activeOpacity={1} style={[styles.drawer, { paddingTop: Math.max(insets.top, 24), paddingBottom: Math.max(insets.bottom, 24) }]}>
           
-          {/* Botão Fechar */}
+          {}
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <X color="#8A8A8E" size={20} />
           </TouchableOpacity>
 
-          {/* Avatar no Header — clicável para ir ao perfil */}
+          {}
           <TouchableOpacity
             style={styles.header}
             onPress={() => handleNavigate('/(tabs)/profile')}
@@ -85,10 +84,10 @@ export function MenuDrawer({ visible, onClose }: MenuDrawerProps) {
             <RNText style={styles.drawerUserEmail} numberOfLines={1}>{email}</RNText>
           </TouchableOpacity>
 
-          {/* Menu Items */}
+          {}
           <View style={styles.menuList}>
             
-            {/* Início (Ativo - Fundo avermelhado) */}
+            {}
             <TouchableOpacity style={styles.menuItemActive} onPress={() => handleNavigate('/(tabs)/index')}>
               <Home color="#FF1744" size={22} strokeWidth={2} />
               <RNText style={styles.menuLabelActive}>Início</RNText>
@@ -133,7 +132,7 @@ export function MenuDrawer({ visible, onClose }: MenuDrawerProps) {
 
           </View>
 
-          {/* Rodapé: Card Emergência */}
+          {}
           <View style={styles.emergencyWrapper}>
             <TouchableOpacity style={styles.emergencyCard} onPress={handleCallEmergency}>
               <View style={styles.emergencyIconBox}>

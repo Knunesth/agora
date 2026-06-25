@@ -34,7 +34,7 @@ export default function InviteRoute() {
           router.replace('/(auth)/invite-welcome');
         }
       } catch (e) {
-        console.error('[InviteRoute Error]', e);
+
         router.replace('/(auth)/login');
       }
     };

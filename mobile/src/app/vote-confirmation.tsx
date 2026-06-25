@@ -20,14 +20,14 @@ export default function VoteConfirmationScreen() {
       <View style={styles.content}>
         <View style={{ flex: 1 }} />
 
-        {/* Ícone animado */}
+        {}
         <View style={styles.iconContainer}>
           <View style={styles.iconCircle}>
             <Flame color={colors.warning} size={48} />
           </View>
         </View>
 
-        {/* Textos */}
+        {}
         <View style={styles.textContainer}>
           <Text variant="h2" style={styles.title}>Obrigado por confirmar!</Text>
           <Text variant="body" color={colors.textSecondary} style={styles.subtitle}>
@@ -35,7 +35,7 @@ export default function VoteConfirmationScreen() {
           </Text>
         </View>
 
-        {/* Card de Confirmações */}
+        {}
         <View style={styles.statsCard}>
           <View style={styles.statRow}>
             <Flame color={colors.warning} size={20} />
@@ -54,7 +54,7 @@ export default function VoteConfirmationScreen() {
 
         <View style={{ flex: 1 }} />
 
-        {/* Botão */}
+        {}
         <Button
           title="Voltar para alertas"
           variant="primary"

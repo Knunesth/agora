@@ -37,7 +37,6 @@ import Animated, {
   withSpring,
   Easing,
   cancelAnimation,
-  runOnJS,
 } from 'react-native-reanimated';
 
 // ═══════════════════════════════════════════
@@ -120,10 +119,10 @@ export function SOSButton({ onActivate, disabled = false }: SOSButtonProps) {
 
   return (
     <View style={styles.wrapper}>
-      {/* Anel de pulso (atrás do botão) */}
+      {}
       <Animated.View style={[styles.pulseRing, animatedPulse]} />
 
-      {/* Botão SOS */}
+      {}
       <Animated.View style={animatedButton}>
         <Pressable
           onPressIn={handlePressIn}

@@ -41,7 +41,7 @@ export default function InviteWelcomeScreen() {
       setInviterInitials(data[0].inviter_initials || 'A');
       setLoading(false);
     } catch (err) {
-      console.error(err);
+
       setErrorMsg('Erro ao carregar o convite.');
       setLoading(false);
     }

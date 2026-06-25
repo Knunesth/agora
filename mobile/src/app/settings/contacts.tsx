@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Share, Modal, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -59,7 +59,7 @@ export default function ContactsScreen() {
         setContacts([]);
       }
     } catch (err) {
-      console.error(err);
+
       Alert.alert('Erro', 'Não foi possível carregar os contatos.');
     } finally {
       setLoading(false);
@@ -85,7 +85,7 @@ export default function ContactsScreen() {
         setModalVisible(false);
       }
     } catch (err: any) {
-      console.error(err);
+
       Alert.alert('Erro', err.message || 'Não foi possível gerar o convite.');
     } finally {
       setLoadingInvite(false);
@@ -119,7 +119,7 @@ export default function ContactsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ChevronLeft color={colors.textPrimary} size={24} />

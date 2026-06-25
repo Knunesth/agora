@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import {
   Bell, Lock, MapPin, Info, ShieldCheck, LogOut, ChevronRight, Users,
 } from 'lucide-react-native';
-import { Text, Button } from '@/components/ui';
+import { Text } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing, borderRadius } from '@/theme/spacing';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,7 +114,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Avatar + Badge */}
+        {}
         <View style={styles.avatarSection}>
           <View style={styles.avatar}>
             <Text style={styles.initials}>{initials}</Text>
@@ -126,7 +126,7 @@ export default function ProfileScreen() {
           <Text variant="caption" color={colors.textMuted}>{user?.email}</Text>
         </View>
 
-        {/* Stats */}
+        {}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{myAlerts.length}</Text>
@@ -148,7 +148,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Histórico de Alertas */}
+        {}
         <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>
           HISTÓRICO DE ALERTAS
         </Text>
@@ -182,7 +182,7 @@ export default function ProfileScreen() {
           );
         })}
 
-        {/* Menu Configurações */}
+        {}
         <Text variant="overline" color={colors.textMuted} style={[styles.sectionLabel, { marginTop: spacing.lg }]}>
           CONFIGURAÇÕES
         </Text>
@@ -205,13 +205,13 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Sair */}
+        {}
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
           <LogOut color={colors.danger} size={18} />
           <Text style={styles.signOutText}>Sair</Text>
         </TouchableOpacity>
 
-        {/* Espaçamento extra no final para a CustomTabBar não cobrir o último item */}
+        {}
         <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>

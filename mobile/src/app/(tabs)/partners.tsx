@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import {
   View, ScrollView, StyleSheet, TouchableOpacity, Image,
-  Modal, Animated, Dimensions, FlatList, Platform
-} from 'react-native';
+  Modal, Dimensions} from 'react-native';
 import { Text } from '@/components/ui';
 import { useRouter } from 'expo-router';
 import {
   ChevronLeft, Shield, MapPin, Phone, Clock,
-  Star, Tag, X, CheckCircle, ChevronRight
-} from 'lucide-react-native';
+  Star, Tag, X, CheckCircle} from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { typography } from '@/theme/typography';
@@ -102,7 +100,7 @@ export default function PartnersScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {}
         <View style={styles.topBar}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <ChevronLeft color="#FFF" size={22} strokeWidth={2.5} />
@@ -111,7 +109,7 @@ export default function PartnersScreen() {
           <View style={{ width: 40 }} />
         </View>
 
-        {/* Hero */}
+        {}
         <LinearGradient
           colors={['#0D3320', '#071A10']}
           style={styles.heroCard}
@@ -126,7 +124,7 @@ export default function PartnersScreen() {
           <Text style={styles.heroSubtitle}>Estabelecimentos parceiros que garantem sua segurança e bem-estar.</Text>
         </LinearGradient>
 
-        {/* Section */}
+        {}
         <Text style={styles.sectionTitle}>Próximas a você</Text>
 
         {STORES.map((store) => (
@@ -136,7 +134,7 @@ export default function PartnersScreen() {
             onPress={() => setSelectedStore(store)}
             activeOpacity={0.85}
           >
-            {/* Image */}
+            {}
             <View style={styles.cardImageWrapper}>
               <Image source={{ uri: store.image }} style={styles.cardImage} />
               <LinearGradient
@@ -149,7 +147,7 @@ export default function PartnersScreen() {
               </View>
             </View>
 
-            {/* Content */}
+            {}
             <View style={styles.cardBody}>
               <View style={styles.cardTopRow}>
                 <View style={{ flex: 1 }}>
@@ -180,7 +178,7 @@ export default function PartnersScreen() {
         ))}
       </ScrollView>
 
-      {/* Store Detail Modal */}
+      {}
       <Modal
         visible={!!selectedStore}
         transparent
@@ -191,16 +189,16 @@ export default function PartnersScreen() {
           <TouchableOpacity style={styles.modalDismiss} onPress={() => setSelectedStore(null)} />
           {selectedStore && (
             <View style={[styles.bottomSheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-              {/* Handle */}
+              {}
               <View style={styles.sheetHandle} />
 
-              {/* Close */}
+              {}
               <TouchableOpacity style={styles.sheetClose} onPress={() => setSelectedStore(null)}>
                 <X color="#888" size={20} />
               </TouchableOpacity>
 
               <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Store Hero */}
+                {}
                 <View style={styles.sheetHeroWrapper}>
                   <Image source={{ uri: selectedStore.image }} style={styles.sheetHeroImage} />
                   <LinearGradient colors={['transparent', 'rgba(18,18,18,0.95)']} style={styles.sheetHeroGrad} />
@@ -215,10 +213,10 @@ export default function PartnersScreen() {
                 </View>
 
                 <View style={styles.sheetBody}>
-                  {/* Description */}
+                  {}
                   <Text style={styles.sheetDesc}>{selectedStore.description}</Text>
 
-                  {/* Info Row */}
+                  {}
                   <View style={styles.infoRow}>
                     <View style={styles.infoItem}>
                       <MapPin size={16} color="#00E676" />
@@ -234,7 +232,7 @@ export default function PartnersScreen() {
                     <Text style={styles.infoText}>{selectedStore.hours}</Text>
                   </View>
 
-                  {/* Features */}
+                  {}
                   <Text style={styles.sheetSectionTitle}>Serviços oferecidos</Text>
                   <View style={styles.featuresGrid}>
                     {selectedStore.features.map((f) => (
@@ -245,7 +243,7 @@ export default function PartnersScreen() {
                     ))}
                   </View>
 
-                  {/* Products */}
+                  {}
                   <Text style={styles.sheetSectionTitle}>Produtos em destaque</Text>
                   {selectedStore.products.map((p) => (
                     <View key={p.name} style={styles.productRow}>

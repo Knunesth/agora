@@ -27,13 +27,11 @@ import {
   Edit3,
   Trash2,
   Users,
-  Check,
 } from 'lucide-react-native';
 import { Text, Input, Button } from '@/components/ui';
 import { colors } from '@/theme/colors';
 import { spacing, borderRadius, shadow } from '@/theme/spacing';
 
-// ─── Tipo ────────────────────────────────────────────────────────────────────
 
 interface Contact {
   id: string;
@@ -42,11 +40,9 @@ interface Contact {
   phone: string;
 }
 
-// ─── Estado inicial (demonstração) ───────────────────────────────────────────
 
 const INITIAL_CONTACTS: Contact[] = [];
 
-// ─── Componente Principal ─────────────────────────────────────────────────────
 
 export default function ContactsScreen() {
   const router = useRouter();
@@ -116,12 +112,11 @@ export default function ContactsScreen() {
     setEditingContact(null);
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
 
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+      {}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ChevronLeft color={colors.textPrimary} size={24} />
@@ -132,19 +127,19 @@ export default function ContactsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Lista de contatos ────────────────────────────────────────────── */}
+      {}
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Contador */}
+        {}
         <Text variant="overline" color={colors.textMuted} style={styles.sectionLabel}>
           {contacts.length === 0
             ? 'NENHUM CONTATO ADICIONADO'
             : `${contacts.length} CONTATO${contacts.length > 1 ? 'S' : ''}`}
         </Text>
 
-        {/* Estado vazio */}
+        {}
         {contacts.length === 0 && (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
@@ -163,10 +158,10 @@ export default function ContactsScreen() {
           </View>
         )}
 
-        {/* Cards de contatos */}
+        {}
         {contacts.map(contact => (
           <View key={contact.id} style={styles.contactCard}>
-            {/* Avatar */}
+            {}
             <View style={styles.contactAvatar}>
               <Text style={styles.contactInitials}>
                 {contact.name
@@ -178,7 +173,7 @@ export default function ContactsScreen() {
               </Text>
             </View>
 
-            {/* Info */}
+            {}
             <View style={styles.contactInfo}>
               <Text variant="body" style={styles.contactName}>{contact.name}</Text>
               {contact.email ? (
@@ -193,7 +188,7 @@ export default function ContactsScreen() {
               ) : null}
             </View>
 
-            {/* Ações */}
+            {}
             <View style={styles.contactActions}>
               <TouchableOpacity
                 style={styles.actionBtn}
@@ -216,14 +211,14 @@ export default function ContactsScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* ── Botão flutuante de adicionar ────────────────────────────────── */}
+      {}
       {contacts.length > 0 && (
         <TouchableOpacity style={styles.fab} onPress={handleOpenAdd}>
           <UserPlus color={colors.textInverse} size={22} />
         </TouchableOpacity>
       )}
 
-      {/* ── Modal de adicionar / editar ──────────────────────────────────── */}
+      {}
       <Modal
         visible={modalVisible}
         transparent
@@ -241,10 +236,10 @@ export default function ContactsScreen() {
           />
 
           <View style={styles.modalSheet}>
-            {/* Handle */}
+            {}
             <View style={styles.sheetHandle} />
 
-            {/* Título */}
+            {}
             <View style={styles.sheetHeader}>
               <Text variant="h3" style={styles.sheetTitle}>
                 {editingContact ? 'Editar contato' : 'Novo contato'}
@@ -254,7 +249,7 @@ export default function ContactsScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Formulário */}
+            {}
             <View style={styles.form}>
               <Input
                 placeholder="Nome completo *"
@@ -280,7 +275,7 @@ export default function ContactsScreen() {
               />
             </View>
 
-            {/* Botão salvar */}
+            {}
             <Button
               title={editingContact ? 'Salvar alterações' : 'Adicionar contato'}
               variant="primary"
@@ -295,7 +290,6 @@ export default function ContactsScreen() {
   );
 }
 
-// ─── Estilos ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
