@@ -67,11 +67,29 @@ export default function ContactsScreen() {
   };
 
   const handleGenerateLink = async () => {
-    Alert.alert(
-      'Em breve', 
-      'Esta funcionalidade estará disponível na próxima versão do Ágora.',
-      [{ text: 'OK' }]
-    );
+    setLoadingInvite(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-invite', {
+        method: 'POST'
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.link) {
+        await Clipboard.setStringAsync(data.link);
+        Alert.alert(
+          'Link Copiado! 🔗', 
+          'A URL de convite foi copiada para sua área de transferência. Cole no WhatsApp ou onde quiser para convidar seus amigos!'
+        );
+        setModalVisible(false);
+      }
+    } catch (err: any) {
+      console.error(err);
+      Alert.alert('Erro', err.message || 'Não foi possível gerar o convite.');
+    } finally {
+      setLoadingInvite(false);
+    }
   };
 
   const handleAddByEmail = async () => {

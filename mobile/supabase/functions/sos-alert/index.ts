@@ -41,7 +41,8 @@ serve(async (req) => {
         description: 'ALERTA SOS EMITIDO PELO USUÁRIO',
         status: 'verified',
         location: `POINT(${location.longitude} ${location.latitude})`,
-        user_id, 
+        user_id,
+        expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
       })
       .select()
       .single();

@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import {
-  View, StyleSheet, ScrollView, TouchableOpacity, Alert as RNAlert, Image, ActivityIndicator
+  View, StyleSheet, ScrollView, TouchableOpacity, Alert as RNAlert, Image, ActivityIndicator, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -108,6 +108,45 @@ export default function AlertDetailsScreen() {
       RNAlert.alert('Erro', 'Falha ao registrar voto. Tente novamente.');
     } finally {
       setIsVoting(false);
+    }
+  };
+
+  const handleDeleteAlert = async () => {
+    const executeDelete = async () => {
+      setIsVoting(true);
+      try {
+        const { error } = await supabase.from('alerts').delete().eq('id', alert.id);
+        if (error) throw error;
+        if (Platform.OS !== 'web') {
+          RNAlert.alert('Sucesso', 'Alerta apagado com sucesso.');
+        } else {
+          window.alert('Alerta apagado com sucesso.');
+        }
+        router.back();
+      } catch (err: any) {
+        if (Platform.OS !== 'web') {
+          RNAlert.alert('Erro', 'Falha ao apagar alerta.');
+        } else {
+          window.alert('Falha ao apagar alerta.');
+        }
+      } finally {
+        setIsVoting(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('Tem certeza que deseja apagar este alerta? Esta ação não pode ser desfeita.')) {
+        executeDelete();
+      }
+    } else {
+      RNAlert.alert(
+        'Cancelar Alerta',
+        'Tem certeza que deseja apagar este alerta? Esta ação não pode ser desfeita.',
+        [
+          { text: 'Não', style: 'cancel' },
+          { text: 'Sim, apagar', style: 'destructive', onPress: executeDelete }
+        ]
+      );
     }
   };
 
@@ -231,11 +270,20 @@ export default function AlertDetailsScreen() {
             </View>
           )}
 
-          {!isVerified && isOwnAlert && (
+          {isOwnAlert && (
             <View style={[styles.voteSection, { alignItems: 'center', paddingVertical: spacing.xl }]}>
-              <Text variant="bodySmall" color={colors.primary} style={{ textAlign: 'center' }}>
-                Este é o seu reporte. Aguarde os votos da comunidade para alcançar o consenso.
-              </Text>
+              {!isVerified && (
+                <Text variant="bodySmall" color={colors.primary} style={{ textAlign: 'center', marginBottom: spacing.md }}>
+                  Este é o seu reporte. Aguarde os votos da comunidade para alcançar o consenso.
+                </Text>
+              )}
+              <TouchableOpacity
+                style={[styles.voteButton, styles.voteReject, { width: '100%', borderColor: colors.danger, borderWidth: 1 }]}
+                onPress={handleDeleteAlert}
+                disabled={isVoting}
+              >
+                <Text style={[styles.voteRejectText, { color: colors.danger }]}>Excluir Meu Alerta</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
