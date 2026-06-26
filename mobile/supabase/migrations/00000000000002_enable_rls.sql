@@ -1,19 +1,22 @@
--- ==============================================================================
--- ÁGORA - SPRINT 5
--- Migração para habilitar Row Level Security (RLS) e Políticas de Acesso
--- ==============================================================================
+-- ROLLBACK (executar manualmente se precisar desfazer):
+-- DROP POLICY IF EXISTS "alerts_insert" ON alerts;
+-- DROP POLICY IF EXISTS "alerts_select" ON alerts;
+-- ALTER TABLE alerts DISABLE ROW LEVEL SECURITY;
 
--- 1. Forçar o bloqueio da tabela (Nenhum select ou insert passa se não tiver uma policy permitindo)
+-- Migration: 00000000000002_enable_rls.sql
+-- Descrição: Habilita RLS na tabela alerts e cria políticas de leitura pública e inserção restrita
+-- Depende de: 00000000000000_init_agora.sql
+
 ALTER TABLE alerts ENABLE ROW LEVEL SECURITY;
 
--- 2. Leitura pública para quem estiver logado (Qualquer um vê alertas)
+-- Qualquer usuário autenticado pode ler todos os alertas (mapa público)
 CREATE POLICY "alerts_select" ON alerts
   FOR SELECT TO authenticated USING (true);
 
--- 3. Inserção rigorosa (Você só pode inserir dados se o user_id for o da sua própria sessão no supabase_auth)
+-- Inserção apenas com user_id igual ao da sessão autenticada
 CREATE POLICY "alerts_insert" ON alerts
   FOR INSERT TO authenticated
   WITH CHECK (user_id = auth.uid());
 
--- NOTA: A nossa Edge Function do SOS (Sprint 4) continuará funcionando normalmente
--- pois usa a SUPABASE_SERVICE_ROLE_KEY, que tem a super-permissão de bypass_rls.
+-- NOTA: a Edge Function sos-alert usa SUPABASE_SERVICE_ROLE_KEY (bypass_rls),
+-- por isso não é afetada por estas políticas.
