@@ -26,6 +26,9 @@ import { supabase } from '@/services/supabase';
 
 
 async function registerForPushNotifications(): Promise<void> {
+  // Push não é suportado no ambiente web — expo-notifications lança exceção
+  if (Platform.OS === 'web') return;
+
   // Push remoto só funciona em dispositivo físico (não emulador, não Expo Go)
   if (!Device.isDevice) {
     console.log('[PushNotifications] Ignorado: não é dispositivo físico.');

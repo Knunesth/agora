@@ -53,6 +53,8 @@ export function useAlerts(userLocation: GeoCoords | null) {
   const lastFetchedLocation = useRef<GeoCoords | null>(null);
   // Ref para o canal ativo — necessário para cleanup correto
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  // Guard: impede subscrição dupla ao Realtime quando o efeito remonta
+  const isSubscribed = useRef(false);
 
   const fetchAlerts = useCallback(async (location: GeoCoords, force = false) => {
     // Debounce de posição (~100m): evita re-fetch se o usuário não se moveu
@@ -116,6 +118,10 @@ export function useAlerts(userLocation: GeoCoords | null) {
 
   useEffect(() => {
     if (!userLocation) return;
+
+    // Guard: sai imediatamente se o canal já foi criado (evita double-subscribe)
+    if (isSubscribed.current) return;
+    isSubscribed.current = true;
 
     // 1. Fetch inicial para carregar alertas existentes
     fetchAlerts(userLocation, true);
@@ -184,8 +190,9 @@ export function useAlerts(userLocation: GeoCoords | null) {
 
     channelRef.current = channel;
 
-    // Cleanup: cancela a subscrição ao desmontar ou quando a localização mudar
+    // Cleanup: cancela a subscrição ao desmontar e libera o guard para nova montagem
     return () => {
+      isSubscribed.current = false;
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
